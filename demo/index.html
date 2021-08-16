@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- meta descriptions and etc -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="author" content="Rafael Nogueira Nakashima" />
+    <meta name="description" content="laine C++ demo"/>
+    <meta name="theme-color" content="#C93833" />
+    <link rel="manifest" href="manifest.json" />
+    <!-- head -->
+    <title>laine C++ demo</title>
+    <!-- scripts -->
+    <script defer src="./laine.js"></script>
+    <script>
+      function solve(){
+	  let text = document.getElementById("box").value;
+	  let out = document.getElementById("out");
+	  try{
+	      let solution = JSON.parse(Module.laine(text));
+	      let pretty = "";
+	      for (const name in solution) {
+		  pretty += `${name} = ${solution[name]}<br>`;
+	      }
+	      out.innerHTML = pretty;
+	  } catch{
+	      out.innerHTML = "An error was found";
+	  }
+      }
+    </script>
+    <!-- body -->
+    <body class="body">
+      <main style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+	<textarea id="box" class="box" rows="10" cols="80" spellcheck="false">
+(3-2*x_1)*x_1-2*x_2=-1
+-x_1+(3-2*x_2)*x_2-2*x_3=-1
+-x_2+(3-2*x_3)*x_3-2*x_4=-1
+-x_3+(3-2*x_4)*x_4-2*x_5=-1
+-x_4+(3-2*x_5)*x_5-2*x_6=-1
+-x_5+(3-2*x_6)*x_6-2*x_7=-1
+-x_6+(3-2*x_7)*x_7-2*x_8=-1
+-x_7+(3-2*x_8)*x_8-2*x_9=-1
+-x_8+(3-2*x_9)*x_9=-1</textarea>
+	<div>
+	  <button onclick="solve()"> Solve ! </button>
+	  <div id="out">
+	  </div>
+	</div>
+      </main>
+    </body>
+</html>
