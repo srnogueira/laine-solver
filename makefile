@@ -8,7 +8,7 @@ laine : laine.cc $(H_SOURCE)
 	g++ -Wall -O3 ./src/laine.cc -I./include -o ./bin/laine
 
 wasm : wasm.cc $(H_SOURCE)
-	emcc --bind -O3 ./src/wasm.cc -I./include -o ./demo/laine.js
+	emcc --bind -O3 ./src/wasm.cc -I./include -o ./docs/laine.js
 
 # Old configurations for CoolProp integration
 # CPinclude = -ldl -L./lib/coolprop/static -I./lib/coolprop/include -I./lib/coolprop/externals/fmtlib/
