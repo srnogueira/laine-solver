@@ -26,6 +26,9 @@ struct mat{
   void set(int r, int c, double v){eArray[c+r*columns]=v;}
   // Overloaded operators
   mat& operator* (double scalar);
+  mat& operator/ (double scalar);
+  mat operator* (mat other);
+  mat operator- (mat other);
   mat operator+= (mat& other);
   mat operator-= (mat& other);
   mat& operator=(mat other);
@@ -134,6 +137,56 @@ mat& mat::operator*(double scalar){
   return *this;
 }
 
+
+/* *
+ * mat operator /
+ */
+mat& mat::operator/(double scalar){
+  double foo;
+  for (int i=0; i<rows; ++i){
+    for (int j=0; j<columns; j++){
+      foo=this->get(i,j);
+      this->set(i,j,foo/scalar);
+    }
+  }
+  return *this;
+}
+
+/**
+ * mat operator *
+ */
+mat mat::operator* (mat other){
+  // Overloaded times operator (not really used)
+  double sum;
+  mat answer(rows,other.columns);
+  for (int i=0; i<rows; ++i){
+    for (int j=0; j<other.columns;++j){
+      sum=0;
+      for (int k=0; k<columns;++k){
+	sum+=get(i,k)*other.get(k,j);
+      }
+      answer.set(i,j,sum);
+    }
+  }
+  return answer;
+}
+
+/**
+ * operator -
+ */
+mat mat::operator- (mat other){
+  // Overloaded times operator (not really used)
+  double sum;
+  mat answer(rows,columns);
+  for (int i=0; i<rows; ++i){
+    for (int j=0; j<columns;++j){
+      sum = get(i,j)-other.get(i,j);
+      answer.set(i,j,sum);
+    }
+  }
+  return answer;
+}
+
 /* *
  * Swaps the rows of a matrix
  */
@@ -201,26 +254,3 @@ mat gaussElimination(mat& coeff, mat& equals){
 }
 
 #endif // MATRIX
-
-/* *
- * mat operator *
- * not a good solution, has memory leaks
- */
-/*
-mat mat::operator* (mat& other){
-  double foo, bar, sum;
-  mat answer(rows,other.columns);
-  for (int i=0; i<rows; ++i){
-    for (int j=0; j<other.columns; ++j){
-      sum=0;
-      for (int k=0; k<columns; ++k){
-	foo=this->get(i,k);
-	bar=other.get(k,j);
-	sum+=foo*bar;
-      }
-      answer.set(i,j,sum);
-    }
-  }
-  return answer;
-}
-*/

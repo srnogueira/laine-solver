@@ -2,6 +2,7 @@
 #include <algorithm> // remove
 #include <time.h>    // random
 #include <math.h>    // isfinite
+#include <chrono>     // evaluation time
 
 #include "polish.hpp" // expression parser
 #include "matrix.hpp" // matrix -> correct the index
@@ -116,6 +117,36 @@ void evalJacobian(std::vector<Node*> &forest, Scope &guess,const Variables &vars
     }
   }
 }
+
+
+/**
+ * Broyden
+ **/
+void evalBroyden(mat &jac, mat &dx, mat &df)
+{
+  // Update factor
+  mat aux = df - jac * dx;
+  double normSquared=0;
+  for (int i = 0; i < dx.rows; ++i)
+  {
+    normSquared += pow(dx.get(i, 0), 2);
+  }
+  aux = aux/normSquared;
+  
+  mat update(jac.rows,jac.columns);
+  double plus;
+  for (int i=0;i<jac.rows;++i){
+    for (int j=0;j<jac.columns;++j){
+      plus = aux.get(i,0)*dx.get(j,0);
+      update.set(i,j,plus);
+    }
+  }
+
+  //return ans;
+  jac += update;
+}
+
+
 
 /**
  * Updates a scope with values from a mat
@@ -300,9 +331,7 @@ mat brent(std::string var, Node* tree, Scope &guessScope){
   int count = 0;
   const double tol = 1e-6;
   const int max = 100;
-  // std::cout << a << " " << b << std::endl;
   while (abs(fb) > tol && abs(b-a)>tol && count < max){
-    //std::cout << s << " " << fs << std::endl;
     ++count;
     if (fa != fc && fb != fc){
       s =  a*fb*fc/(fa-b)/(fa-fc) + b*fa*fc/(fb-fa)/(fb-fc) + c*fa*fb/(fc-fa)/(fc-fb);
@@ -378,6 +407,7 @@ void solve(Node* tree, Scope &guessScope=blankScope){
  * Newton method for multiple dimensions
  **/
 void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
+
   // Variables
   Variables vars(forest,guessScope);
   const unsigned n = vars.all.size();
@@ -401,6 +431,8 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
   mat side(n,1);
   mat jac(n,n);
   mat deltaX(n,1);
+  mat deltaF(n,1);
+  mat deltaG(n,1);
 
   // Error doubles
   double error = 1;
@@ -415,40 +447,79 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
   const int max_tries = 3;
   int count = 0;
   int count_line = 0;
-
+  bool computed;
+  bool useBroyden;
   for (unsigned g=0; g<guessList.size() && g<max_tries; ++g){
     count = 0;
     error = 1;
     error_dx = 1;
     error_rel = 1;
     error_change = 1;
+    useBroyden = false; // flag to use Broyden method
+    computed = false;   // flag to indicate if its the calculated Jacobian
 
+    // Fist evaluation
     guess = guessList[g].first;
     updateScope(guessScope,vars,guess);
     evalForest(forest,guessScope,answers,side);
     error = evalError(answers);
+
     // Newton method: create function to eval convergence
     while (error_dx > 5e-6 && (error_rel > 1e-3 || error > 1e-6) &&
 	   count < max){
-      evalJacobian(forest,guessScope,vars,jac,answers);
+      
+      if (useBroyden){
+	evalBroyden(jac, deltaG, deltaF);
+	computed = false;
+      } else{
+	evalJacobian(forest,guessScope,vars,jac,answers);
+	useBroyden = true;
+	computed = true;
+      }
+
+      // Store values for Broyden method
+      deltaG = mat(guess);
+      deltaF = mat(answers);
+
+      // Update guess
       deltaX = gaussElimination(jac,answers);
       guess += deltaX;
 
-      // Line-search loop
+      // Line-search loop [Most time is expended here]
       count_line = 0;
       do {
-	updateScope(guessScope,vars,guess);	
+	updateScope(guessScope,vars,guess);
 	evalForest(forest,guessScope,answers,side);
 	error_line = evalError(answers);
 	++count_line;
 	// Reduce the step if necessary
 	error_change = abs(1-error_line/error);
 	if(error_line > error || !isfinite(error_line)){
-	  guess -= deltaX*(1/pow(2,count_line));
+	  if (computed){
+	    guess -= deltaX*(1/pow(2,count_line));
+	  } else{
+	    useBroyden=false;
+	    break;
+	  }
 	}
       } while ((error_line > error || !isfinite(error_line)) &&
 	       count_line < max_line);
 
+      // Try again with Jacobian since Broyden has failed
+      if (!computed && useBroyden==false){
+	continue;
+      }
+      
+      // Check error change <- break earlier
+      if (!isfinite(error) || error_change < 1e-3){
+	count = max;
+	break;
+      }    
+      
+      // Required for the Broyden method
+      deltaG = guess-deltaG;
+      deltaF -= answers; // -answer bug
+      
       if(count_line == max_line && count != 0){
 	// Line-search failed - break
 	count = max;
@@ -459,12 +530,7 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
       error = error_line;
       error_rel = evalError(answers,side);
       error_dx = count !=0 ? evalError(deltaX,guess) : 1;
-      
-      // Check error change <- break earlier
-      if (!isfinite(error) || error_change < 1e-3){
-	count = max;
-	break;
-      }    
+
       ++count;
     }
 
@@ -473,10 +539,10 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
       break;
     }
   }
-
+      
   if(count == max){
     throw std::invalid_argument("not converged @solve");
-  }  
+  }
 }
 
 #endif //_SOLVER_
