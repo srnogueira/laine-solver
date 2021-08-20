@@ -19,18 +19,24 @@ int main(){
   /**
    * Solve problem
    **/
-  const auto t1 = std::chrono::high_resolution_clock::now(); // start chrono
-  Scope solutions;
-  solveProblem(lines,solutions);
-  const auto t2 = std::chrono::high_resolution_clock::now();
-  const auto ms_int= std::chrono::duration_cast<std::chrono::microseconds>(t2-t1);
-  std::cout << "Time: "<< ms_int.count()/1e3<< " ms" << std::endl;
+  char input = 'y';
+  while (input){
+    const auto t1 = std::chrono::high_resolution_clock::now(); // start chrono
+    Scope solutions;
+    solveProblem(lines,solutions);
+    const auto t2 = std::chrono::high_resolution_clock::now();
+    const auto ms_int= std::chrono::duration_cast<std::chrono::microseconds>(t2-t1);
+    std::cout << "Time: "<< ms_int.count()/1e3<< " ms" << std::endl;
 
-  /**
-   * Print results
-   **/
-  for (auto &kv:solutions){
-    std::cout << kv.first << ": " << kv.second << std::endl;
+    /**
+     * Print results
+     **/
+    for (auto &kv:solutions){
+      std::cout << kv.first << ": " << kv.second << std::endl;
+    }
+
+    // Repeat?
+    std::cin >> input;
   }
   return true;
 }
