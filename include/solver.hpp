@@ -193,7 +193,7 @@ std::vector<Guess> findGuess(Variables &vars, std::vector<Node*> &forest, Scope 
   for (int j=0;j<8;++j){
     // Set value
     for (int i=0;i<guessN.rows;++i){
-      srand(time(NULL)+i);
+      srand(time(NULL)+rand()+i);
       val = (1+(rand()%1001)*1e-3)*list[j]; // -/+ 10% guess
       guessN.set(i,0,val);
     }
@@ -224,10 +224,12 @@ std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Sc
   std::vector<Guess> guessList;
   double higher = std::numeric_limits<double>::infinity();  
   for (int j=0;j<8;++j){ 
+    srand(time(NULL)+rand()+j);
     x = (1+(rand()%1001)*1e-3)*list[j]; // 0 to + 1.000
     guessN.set(0,0,x);
     // Set value
     for (int i=0;i<8;++i){
+      srand(time(NULL)+rand()+i);
       y = (1+(rand()%1001)*1e-3)*list[i]; // 0 to + 1.000
       guessN.set(1,0,y);
       error = evalError(guessN, vars, forest, guessScope);
@@ -414,7 +416,7 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
   int count = 0;
   int count_line = 0;
 
-  for (unsigned g=0; g<guessList.size() || g<max_tries; ++g){
+  for (unsigned g=0; g<guessList.size() && g<max_tries; ++g){
     count = 0;
     error = 1;
     error_dx = 1;
@@ -425,7 +427,6 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
     updateScope(guessScope,vars,guess);
     evalForest(forest,guessScope,answers,side);
     error = evalError(answers);
-    
     // Newton method: create function to eval convergence
     while (error_dx > 5e-6 && (error_rel > 1e-3 || error > 1e-6) &&
 	   count < max){
@@ -474,10 +475,6 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
   }
 
   if(count == max){
-    // Clear guess
-    for (const auto &name:vars.all){
-      guessScope.erase(name);
-    }
     throw std::invalid_argument("not converged @solve");
   }  
 }

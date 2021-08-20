@@ -158,7 +158,8 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
       
     // Solve block
     int count = 0;
-    while (count < 30){
+    const int max_count = 30;
+    while (count < max_count){
       try{
 	if (block.size() == 1 && count == 0){
 	  solve(block[0],solutions);
@@ -168,10 +169,17 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
 	break;
       } catch (std::exception &e){
 	++count;
+	// Clear guesses
+	for (const auto &name:varBlocks){
+	  solutions.erase(name);
+	}
 	continue;
       }
     }
-
+    if (count == max_count){
+      throw std::invalid_argument("not converged @solveByBlocks");
+    }
+    
     // Release memory
     for(auto &eq:block){
       delete eq;
