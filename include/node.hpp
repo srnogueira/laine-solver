@@ -3,7 +3,8 @@
 #include <map>       // store variables
 #include <set>       // sets variables names
 #include <stdexcept> // exceptions
-// #include "CoolProp.h"
+#include "CoolProp.h" // PropsSI
+#include "HumidAirProp.h" // HaPropsSI
 
 /**
  * TO-DO
@@ -39,7 +40,8 @@ std::map<std::string,int> funCodes =
    {"log10", '3'},
    {"abs",'4'},
    {"pow",'5'},
-   {"PropsSI",'6'}
+   {"PropsSI",'6'},
+   {"HAPropsSI",'7'}
   };
 
 std::map<int,std::string> funNames =
@@ -49,7 +51,8 @@ std::map<int,std::string> funNames =
    {'3', "log10"},
    {'4',"abs"},
    {'5',"pow"},
-   {'6',"PropsSI"}
+   {'6',"PropsSI"},
+   {'7',"HAPropsSI"}
   };
 
 using StringSet = std::set<std::string>;
@@ -121,13 +124,25 @@ double evalFun(const char code,Node** input, Scope &local){
     break;
   case '6':
     {
-      // std::string p = input[0]->toString();
-      // std::string v1 = input[1]->toString();
-      // double n1 = input[2] -> eval(local);
-      // std::string v2 = input[3]->toString();
-      // double n2 = input[4] -> eval(local);
-      // std::string fluid = input[5]->toString();
-      ans = 0;//CoolProp::PropsSI(p,v1,n1,v2,n2,fluid);
+      std::string p = input[0]->toString();
+      std::string v1 = input[1]->toString();
+      double n1 = input[2] -> eval(local);
+      std::string v2 = input[3]->toString();
+      double n2 = input[4] -> eval(local);
+      std::string fluid = input[5]->toString();
+      ans = CoolProp::PropsSI(p,v1,n1,v2,n2,fluid);
+    }
+    break;
+  case '7':
+    {
+      std::string p = input[0]->toString();
+      std::string v1 = input[1]->toString();
+      double n1 = input[2] -> eval(local);
+      std::string v2 = input[3]->toString();
+      double n2 = input[4] -> eval(local);
+      std::string v3 = input[5]->toString();
+      double n3 = input[6] -> eval(local);
+      ans = HumidAir::HAPropsSI(p,v1,n1,v2,n2,v3,n3);
     }
     break;
   default:
