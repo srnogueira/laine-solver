@@ -6,11 +6,15 @@
 /**
  * Compare number of vars in trees
  **/
-bool lessVar(Node* first, Node* second){
-  int nF = (first->findVars()).size();
-  int nS = (second->findVars()).size();
-  return (nF<nS);
-}
+struct lessVar {
+  Scope* local;
+  lessVar(Scope& input){local = &input;}
+  bool operator() (Node* first, Node* second){
+    int nF = (first->findVars(*local)).size();
+    int nS = (second->findVars(*local)).size();
+    return (nF<nS);
+  }
+};
 
 /**
  * Verifies if a tree is "simple"
@@ -121,8 +125,12 @@ void algebraicSubs(std::vector<Node*> &simple, std::vector<Node*> &others, Scope
  * Separates equations into blocks and solve them
  **/
 void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
-  std::sort(equations.begin(),equations.end(),lessVar);
-  while (!equations.empty()){
+  lessVar condition(solutions); // Wrap Scope into lessVar
+  
+  while (!equations.empty()){    
+    // Wrapped with scope (very important)
+    std::sort(equations.begin(),equations.end(),condition);
+    
     // Create a block
     StringSet varBlocks = equations[0] -> findVars(solutions);
     std::vector<Node*> block;
@@ -155,12 +163,13 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
 	}
       }
     }
-      
+    
     // Solve block
     int count = 0;
     const int max_count = 30;
     while (count < max_count){
       try{
+	// Try first Brent and after Newton
 	if (block.size() == 1 && count == 0){
 	  solve(block[0],solutions);
 	} else{

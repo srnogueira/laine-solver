@@ -14,8 +14,10 @@
  * TO-DO
  * Change ints to unsign or size_t (they are different)
  * Negative guesses (solver options)
- * Broyden method or other for problems with Coolprop functions
+ * Verify if jacobian and step are valid
+ * Store guesses and promote options that are more distant
  */
+
 
 /**
  * Variables
@@ -221,19 +223,24 @@ std::vector<Guess> findGuess(Variables &vars, std::vector<Node*> &forest, Scope 
   double val, error;
   double list[8] = {0, 1e-3, 0.1, 1, 10, 200, 1e3, 1e5};
   std::vector<Guess> guessList;
-  for (int j=0;j<8;++j){
-    // Set value
-    for (int i=0;i<guessN.rows;++i){
-      srand(time(NULL)+rand()+i);
-      val = (1+(rand()%1001)*1e-3)*list[j]; // -/+ 10% guess
-      guessN.set(i,0,val);
+  const short max_tries = 10;
+  short count = 0;
+  while (guessList.empty() && count < max_tries){
+    for (int j=0;j<8;++j){
+      // Set value
+      for (int i=0;i<guessN.rows;++i){
+	srand(time(NULL)+rand()+i);
+	val = (1+(rand()%1001)*1e-3)*list[j]; // -/+ 10% guess
+	guessN.set(i,0,val);
+      }
+      // Update, evaluate and sum errors
+      error = evalError(guessN, vars, forest, guessScope);
+      // Pair of guess
+      if (isfinite(error)){
+	guessList.push_back(Guess(guessN,error));
+      }
     }
-    // Update, evaluate and sum errors
-    error = evalError(guessN, vars, forest, guessScope);
-    // Pair of guess
-    if (isfinite(error)){
-      guessList.push_back(Guess(guessN,error));
-    }
+    ++count;
   }
   if (!guessList.empty()){
     std::sort(guessList.begin(),guessList.end(),lessError);
@@ -253,22 +260,27 @@ std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Sc
   double x,y, error;
   double list[8] = {0, 1e-3, 0.1, 1, 10, 200, 1e3, 1e5};
   std::vector<Guess> guessList;
-  double higher = std::numeric_limits<double>::infinity();  
-  for (int j=0;j<8;++j){ 
-    srand(time(NULL)+rand()+j);
-    x = (1+(rand()%1001)*1e-3)*list[j]; // 0 to + 1.000
-    guessN.set(0,0,x);
-    // Set value
-    for (int i=0;i<8;++i){
-      srand(time(NULL)+rand()+i);
-      y = (1+(rand()%1001)*1e-3)*list[i]; // 0 to + 1.000
-      guessN.set(1,0,y);
-      error = evalError(guessN, vars, forest, guessScope);
-      if (isfinite(error) && (guessList.size()<3 || error < higher)){
-	guessList.push_back(Guess(guessN,error));
-	higher = error < higher ? error : higher; 
+  double higher = std::numeric_limits<double>::infinity();
+  const short max_tries = 10;
+  short count = 0;
+  while (guessList.empty() && count < max_tries){
+    for (int j=0;j<8;++j){ 
+      srand(time(NULL)+rand()+j);
+      x = (1+(rand()%1001)*1e-3)*list[j]; // 0 to + 1.000
+      guessN.set(0,0,x);
+      // Set value
+      for (int i=0;i<8;++i){
+	srand(time(NULL)+rand()+i);
+	y = (1+(rand()%1001)*1e-3)*list[i]; // 0 to + 1.000
+	guessN.set(1,0,y);
+	error = evalError(guessN, vars, forest, guessScope);
+	if (isfinite(error) && (guessList.size()<3 || error < higher)){
+	  guessList.push_back(Guess(guessN,error));
+	  higher = error < higher ? error : higher; 
+	}
       }
     }
+    ++count;
   }
   if (!guessList.empty()){
     std::sort(guessList.begin(),guessList.end(),lessError);
@@ -282,8 +294,10 @@ std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Sc
  * Brent method for 1D solution
  **/
 mat brent(std::string var, Node* tree, Scope &guessScope){
-  // Get a bracket interval for guess
-  double list[14] =  {1e6, 1e4, 6e3, 273.15, 2e2, 1e2, 1, 1e-2, 0, -1e-2, -1, -1e2, -1e4, -1e6};
+  // Get a bracket interval for guess: common values in problems
+  double list[16] =  {1e6, 1e4, 6e3, 390, 323, 273, 200, 140, 1, 1e-2, 0, -1e-2, -1, -1e2, -1e4, -1e6};
+  // 390 - (323) - 140 : Temperature limits for HAPropsSI
+  
   double a = NAN;
   double b = NAN;
   double fa = INFINITY;
@@ -291,7 +305,7 @@ mat brent(std::string var, Node* tree, Scope &guessScope){
   double error;  
   mat guessN(1,1); 
   // Find a suitable bracket from guess list
-  for (int j=0;j<14;++j){
+  for (int j=0;j<16;++j){
     guessScope[var] = list[j];
     error = tree -> eval(guessScope);
     // Bracket
@@ -398,7 +412,7 @@ void solve(Node* tree, Scope &guessScope=blankScope){
 
   // Error
   if (isnan(guess.get(0,0))){
-    throw std::invalid_argument("solution @solve");
+    throw std::invalid_argument("brent failed @solve");
   }
 }
 
@@ -447,8 +461,13 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
   const int max_tries = 3;
   int count = 0;
   int count_line = 0;
+
+  // Flags and control
   bool computed;
   bool useBroyden;
+  bool nostep;
+  const double safeStep = 0.8;
+  
   for (unsigned g=0; g<guessList.size() && g<max_tries; ++g){
     count = 0;
     error = 1;
@@ -457,13 +476,14 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
     error_change = 1;
     useBroyden = false; // flag to use Broyden method
     computed = false;   // flag to indicate if its the calculated Jacobian
-
+    nostep = false;
+    
     // Fist evaluation
     guess = guessList[g].first;
     updateScope(guessScope,vars,guess);
     evalForest(forest,guessScope,answers,side);
     error = evalError(answers);
-
+    
     // Newton method: create function to eval convergence
     while (error_dx > 5e-6 && (error_rel > 1e-3 || error > 1e-6) &&
 	   count < max){
@@ -483,11 +503,34 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
 
       // Update guess
       deltaX = gaussElimination(jac,answers);
-      guess += deltaX;
+      
+      // Limits the update - use just for the first iteration
+      for (unsigned i=0;i<n;++i){
+	double value = deltaX.get(i,0);
+	// Check if step is a finite number
+	if (!isfinite(value)){
+	  nostep = true;
+	  break;
+	}
+	// POSSIBLE UNSTABLE --> Reduce step error is too high
+	if (error>1E3){
+	  double reference = guess.get(i,0);
+	  if (abs(value/reference)>safeStep){
+	    value = value>0 ? reference*safeStep : -reference*safeStep;
+	    deltaX.set(i,0,value);
+	  }
+	}
+      }
+      if (nostep){
+	count=max;
+	break;
+      }
 
+      guess += deltaX; // Max step
+      
       // Line-search loop [Most time is expended here]
       count_line = 0;
-      do {
+      do {	
 	updateScope(guessScope,vars,guess);
 	evalForest(forest,guessScope,answers,side);
 	error_line = evalError(answers);
@@ -506,16 +549,10 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
 	       count_line < max_line);
 
       // Try again with Jacobian since Broyden has failed
-      if (!computed && useBroyden==false){
+      if (!computed && !useBroyden){
 	continue;
       }
-      
-      // Check error change <- break earlier
-      if (!isfinite(error) || error_change < 1e-3){
-	count = max;
-	break;
-      }    
-      
+
       // Required for the Broyden method
       deltaG = guess-deltaG;
       deltaF -= answers; // -answer bug
@@ -530,6 +567,12 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
       error = error_line;
       error_rel = evalError(answers,side);
       error_dx = count !=0 ? evalError(deltaX,guess) : 1;
+
+      // Check error change <- break earlier
+      if (!isfinite(error) || error_change < 1e-3){
+	count = max;
+	break;
+      }    
 
       ++count;
     }
