@@ -1,8 +1,4 @@
-#include <vector>    // vector
-#include <stack>     // stack
-#include <cctype>    // isdigit
-#include <iostream>  // cout
-#include "node.hpp"  // Include node, string, cmath, map and set
+#include "polish.hpp" // prototypes
 
 /**
  * NOT DO
@@ -10,42 +6,9 @@
  * Token for '=' : same stuff, more complicated
  **/
 
-#ifndef _POLISH_
-#define _POLISH_
-
 /**
- * Detects a delimiter
- **/
-const int symbolType(const char symbol) {
-  int ans;
-  switch (symbol){
-  case '+': case '-':
-    ans = 2;
-    break;
-  case '*': case '/':
-    ans = 3;
-    break;
-  case '^':
-    ans = 4;
-    break;
-  case '(': case ')': case ',':
-    ans = 1;
-    break;
-  default:
-    ans = 0;   // Number, variable, function or string
-  }
-  return ans;
-}
-
-/**
- * Token
- **/
-struct Token {
-  char type;
-  std::string letters;
-  Token(const std::string name);
-};
-
+ * Token constructor
+ */
 Token::Token(const std::string name){
   letters = name;
   const int code = symbolType(letters[0]);
@@ -68,8 +31,32 @@ Token::Token(const std::string name){
 }
 
 /**
+ * Detects a delimiter
+ */
+const int symbolType(const char symbol) {
+  int ans;
+  switch (symbol){
+  case '+': case '-':
+    ans = 2;
+    break;
+  case '*': case '/':
+    ans = 3;
+    break;
+  case '^':
+    ans = 4;
+    break;
+  case '(': case ')': case ',':
+    ans = 1;
+    break;
+  default:
+    ans = 0;   // Number, variable, function or string
+  }
+  return ans;
+}
+
+/**
  * Separates the line into tokens
- **/
+ */
 std::vector<Token> tokenize(const std::string line){
   char c;
   int type;
@@ -119,7 +106,7 @@ std::vector<Token> tokenize(const std::string line){
 
 /**
  * Include a operation to output
- **/
+ */
 void addOperation(std::stack<char>& opStack, std::stack<Node*>& tkStack){
   Node* right = tkStack.top();
   tkStack.pop();
@@ -133,7 +120,7 @@ void addOperation(std::stack<char>& opStack, std::stack<Node*>& tkStack){
 
 /**
  * Include a function to output
- **/
+ */
 void addFunction(std::stack<std::string> &funStack,
 		 std::stack<Node*> &inputStack,
 		 std::stack<char> &opStack,
@@ -152,7 +139,7 @@ void addFunction(std::stack<std::string> &funStack,
 
 /**
  * Parses tokens into tree
- **/
+ */
 Node* parseTokens(const std::vector<Token> &tokens){
   char code;
   int level;
@@ -246,13 +233,11 @@ Node* parseTokens(const std::vector<Token> &tokens){
 
 /**
  * Parses a string into a tree
- **/
+ */
 Node* parse(std::string line){
   Node* tree = parseTokens(tokenize(line));
   return tree;
 }
-
-#endif // _NODE_
 
 /**
  * Solution with regular expressions

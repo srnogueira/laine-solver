@@ -1,40 +1,6 @@
-#include <utility>
-#include <algorithm>
+#include "matrix.hpp"
 
-/* *
- * MATRIX
- */
-
-#ifndef _MATRIX_
-#define _MATRIX_
-
-/* *
- * Matrix struct
- */
-struct mat{
-  // Constructors
-  mat(int r, int c);
-  mat(int r, int c, double* elem);
-  ~mat();
-  mat(const mat &original);
-  // Data
-  int rows;
-  int columns;
-  double* eArray;
-  // Methods
-  double get(int r, int c) const {return eArray[c+r*columns];}
-  void set(int r, int c, double v){eArray[c+r*columns]=v;}
-  // Overloaded operators
-  mat& operator* (double scalar);
-  mat& operator/ (double scalar);
-  mat operator* (mat other);
-  mat operator- (mat other);
-  mat operator+= (mat& other);
-  mat operator-= (mat& other);
-  mat& operator=(mat other);
-};
-
-/* *
+/**
  * mat construtor
  * builds a zero matrix: (n x m) -> [0]nxm
  */
@@ -48,6 +14,10 @@ mat::mat(int r, int c){
   eArray=store;
 }
 
+/**
+ * mat constructor
+ * builds from existing array
+ */
 mat::mat(int r, int c, double* elem){
   rows = r;
   columns = c;
@@ -58,14 +28,14 @@ mat::mat(int r, int c, double* elem){
   eArray=store;
 } 
 
-/* *
+/**
  * mat destructor
  */  
 mat::~mat(){
   delete[] eArray;
 }
 
-/* *
+/**
  * copy
  * has a copy of elements (if necessary)
  */
@@ -80,7 +50,7 @@ mat::mat(const mat &original){
   }
 }
 
-/* *
+/**
  * mat operator +=
  */
 mat mat::operator+= (mat& other){
@@ -95,7 +65,7 @@ mat mat::operator+= (mat& other){
   return *this;
 }
 
-/* *
+/**
  * mat operator -=
  */
 mat mat::operator-= (mat& other){
@@ -110,10 +80,9 @@ mat mat::operator-= (mat& other){
   return *this;
 }
 
-/* *
+/**
  * mat operator =
  * here the pointer is moved to avoid excessive copies and double deletion
- * the old
  */
 mat& mat::operator=(mat other){
   rows = std::move(other.rows);
@@ -123,8 +92,9 @@ mat& mat::operator=(mat other){
   return *this;
 }
 
-/* *
+/**
  * mat operator *
+ * for scalar multiplication
  */
 mat& mat::operator*(double scalar){
   double foo;
@@ -138,8 +108,9 @@ mat& mat::operator*(double scalar){
 }
 
 
-/* *
+/**
  * mat operator /
+ * for scalar division
  */
 mat& mat::operator/(double scalar){
   double foo;
@@ -154,9 +125,9 @@ mat& mat::operator/(double scalar){
 
 /**
  * mat operator *
+ * for matrix
  */
 mat mat::operator* (mat other){
-  // Overloaded times operator (not really used)
   double sum;
   mat answer(rows,other.columns);
   for (int i=0; i<rows; ++i){
@@ -172,10 +143,9 @@ mat mat::operator* (mat other){
 }
 
 /**
- * operator -
+ * mat operator -
  */
 mat mat::operator- (mat other){
-  // Overloaded times operator (not really used)
   double sum;
   mat answer(rows,columns);
   for (int i=0; i<rows; ++i){
@@ -187,19 +157,18 @@ mat mat::operator- (mat other){
   return answer;
 }
 
-/* *
+/**
  * Swaps the rows of a matrix
  */
-void swapRow(mat& matrix,const int rowA,const int rowB)
-{
+void swapRow(mat& matrix,const int rowA,const int rowB){
   const int c = matrix.columns;
   for (int i=0; i<c; ++i){
     std::swap(matrix.eArray[i+rowA*c],matrix.eArray[i+rowB*c]);
   }  
 }
 
-/* *
- * Solver for simple linear systems : 
+/**
+ * Solver for simple linear systems: 
  * Takes [coeff]mxn and [equals]mx1 and solve it;
  */
 mat gaussElimination(mat& coeff, mat& equals){  
@@ -252,5 +221,3 @@ mat gaussElimination(mat& coeff, mat& equals){
   }
   return answer;
 }
-
-#endif // MATRIX

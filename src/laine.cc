@@ -1,8 +1,6 @@
 #include "text.hpp"   // input text and manipulation
-#include "solver.hpp" // numerical solver
 #include "reduce.hpp" // block solver and problem solver
 #include <chrono>     // evaluation time
-
 
 int main(){
   std::cout << "Laine | C++ console version" << std::endl;

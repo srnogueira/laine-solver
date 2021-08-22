@@ -1,15 +1,9 @@
-#include <fstream>   // in-out files
-#include <string>    // string
-#include <vector>    // vector
-
-#ifndef _TEXT_
-#define _TEXT_
+#include "text.hpp"  // function prototypes
 
 /**
  * Turn equations into expressions
- * equation : lhs = rhs
- * expression : lhs-(rhs)
- **/
+ * lhs = rhs -> lhs-(rhs) 
+ */
 std::string minusExp(std::string equation){
   const std::size_t equal = equation.find('=');
   if (equal == std::string::npos){
@@ -21,7 +15,7 @@ std::string minusExp(std::string equation){
 
 /**
  * Break sublines and remove comments
- **/
+ */
 std::string breakLines(std::string &text){
   const unsigned semicolon = text.find(';');
   const unsigned hash = text.find('#');
@@ -46,7 +40,7 @@ std::string breakLines(std::string &text){
 
 /**
  * Get lines from a file
- **/
+ */
 std::vector<std::string> getLines(std::string filename){
   std::ifstream file(filename);
   std::vector<std::string> lines;
@@ -62,5 +56,3 @@ std::vector<std::string> getLines(std::string filename){
   file.close();
   return lines;
 }
-
-#endif // _NODE_

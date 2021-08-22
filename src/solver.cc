@@ -1,14 +1,4 @@
-#include <iostream>  // in-out
-#include <algorithm> // remove
-#include <time.h>    // random
-#include <math.h>    // isfinite
-#include <chrono>     // evaluation time
-
-#include "polish.hpp" // expression parser
-#include "matrix.hpp" // matrix -> correct the index
-
-#ifndef _SOLVER_
-#define _SOLVER_
+#include "solver.hpp" // prototypes
 
 /* *
  * TO-DO
@@ -18,56 +8,52 @@
  * Store guesses and promote options that are more distant
  */
 
-
 /**
- * Variables
- * stores names and a table for fast(er) jacobians
- **/
-struct Variables{
-  StringSet all;
-  bool* table; // if a equation has or not a variable name
-  int n;
-  Variables(const std::vector<Node*> &forest, Scope &local){
-    std::vector<StringSet> eq;
-    StringSet dummy;
-    for (const auto &tree : forest){
-      dummy = tree->findVars(local);
-      eq.push_back(dummy);
-      all.insert(dummy.begin(),dummy.end());
-    }
-    n = forest.size();
-    bool *store = new bool[n*n];
-    int j = 0;
-    for (int i=0; i<n; ++i){      // equation
-      j = 0;
-      for (const auto &name:all){ // name
-	if (eq[i].find(name) != eq[i].end()){
-	  store[j+i*n] = true;
-	} else{
-	  store[j+i*n] = false;
-	}
-	++j;
+ * Variables constructor
+ */
+Variables::Variables(const std::vector<Node*> &forest, Scope &local){
+  std::vector<StringSet> eq;
+  StringSet dummy;
+  for (const auto &tree : forest){
+    dummy = tree->findVars(local);
+    eq.push_back(dummy);
+    all.insert(dummy.begin(),dummy.end());
+  }
+  n = forest.size();
+  bool *store = new bool[n*n];
+  int j = 0;
+  for (int i=0; i<n; ++i){      // equation
+    j = 0;
+    for (const auto &name:all){ // name
+      if (eq[i].find(name) != eq[i].end()){
+	store[j+i*n] = true;
+      } else{
+	store[j+i*n] = false;
       }
-    }
-    table = store;
-  };
-  ~Variables(){delete[] table;};
-  Variables(const Variables &original){
-    // To avoid double deletion and memory leaks
-    n = original.n;
-    all = original.all;
-    table = new bool[n*n];
-    for (int i=0;i<n;++i){
-      for (int j=0;j<n;++j){
-	table[j+i*n] = original.table[j+i*n];
-      }
+      ++j;
     }
   }
+  table = store;
 };
 
 /**
+ * Variables copy
+ */
+Variables::Variables(const Variables &original){
+  // To avoid double deletion and memory leaks
+  n = original.n;
+  all = original.all;
+  table = new bool[n*n];
+  for (int i=0;i<n;++i){
+    for (int j=0;j<n;++j){
+      table[j+i*n] = original.table[j+i*n];
+    }
+  }
+}
+
+/**
  * Calculates the numerical derivative
- **/
+ */
 double dfdx(Node* &tree, Scope &guess, std::string name, double y){
   // Set x
   const double rdiff = 1e-8;
@@ -87,7 +73,7 @@ double dfdx(Node* &tree, Scope &guess, std::string name, double y){
 
 /**
  * Evaluates a vector of trees (forest)
- **/
+ */
 void evalForest(const std::vector<Node*> &forest, Scope &guess, mat &answers, mat &side){
   Node** root;
   double left, right, higher;
@@ -103,7 +89,7 @@ void evalForest(const std::vector<Node*> &forest, Scope &guess, mat &answers, ma
 
 /**
  * Evaluates the Jacobian
- **/
+ */
 void evalJacobian(std::vector<Node*> &forest, Scope &guess,const Variables &vars, mat &jac, mat &answers){
   int j;
   double dummy;
@@ -120,10 +106,9 @@ void evalJacobian(std::vector<Node*> &forest, Scope &guess,const Variables &vars
   }
 }
 
-
 /**
  * Broyden
- **/
+ */
 void evalBroyden(mat &jac, mat &dx, mat &df)
 {
   // Update factor
@@ -148,11 +133,9 @@ void evalBroyden(mat &jac, mat &dx, mat &df)
   jac += update;
 }
 
-
-
 /**
  * Updates a scope with values from a mat
- **/
+ */
 void updateScope(Scope &guess,const Variables &vars, const mat &guessN){
   // Here mat has to be sent as reference, otherwise the code will delete the values.
   int i = 0;
@@ -164,7 +147,7 @@ void updateScope(Scope &guess,const Variables &vars, const mat &guessN){
 
 /**
  * Sums the error in answers
- **/
+ */
 double evalError(const mat &answers){
   double error = 0;
   for (int i=0; i<answers.rows; ++i){
@@ -175,7 +158,7 @@ double evalError(const mat &answers){
 
 /**
  * Sums relative errors
- **/
+ */
 double evalError(const mat &answers,const mat &side){
   double error = 0;
   double foo;
@@ -192,7 +175,7 @@ double evalError(const mat &answers,const mat &side){
 
 /**
  * Update scope, evaluate and sum errors
- **/
+ */
 double evalError(const mat &guessN, Variables &vars, std::vector<Node*> &forest, Scope &guessScope){
   // Update
   updateScope(guessScope, vars, guessN);
@@ -207,9 +190,6 @@ double evalError(const mat &guessN, Variables &vars, std::vector<Node*> &forest,
   return error;
 }
 
-// Guess
-using Guess = std::pair<mat,double>;
-
 // To order errors
 bool lessError(Guess first, Guess second){
   return (abs(first.second)<abs(second.second));
@@ -217,7 +197,7 @@ bool lessError(Guess first, Guess second){
 
 /**
  * Try values and find good guesses
- **/
+ */
 std::vector<Guess> findGuess(Variables &vars, std::vector<Node*> &forest, Scope &guessScope){
   mat guessN(vars.all.size(),1);
   double val, error;
@@ -254,7 +234,7 @@ std::vector<Guess> findGuess(Variables &vars, std::vector<Node*> &forest, Scope 
 /**
  * Try n*n values for 2D problems
  * Slower, but more reliable
- **/
+ */
 std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Scope &guessScope){
   mat guessN(vars.all.size(),1);
   double x,y, error;
@@ -292,7 +272,7 @@ std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Sc
 
 /**
  * Brent method for 1D solution
- **/
+ */
 mat brent(std::string var, Node* tree, Scope &guessScope){
   // Get a bracket interval for guess: common values in problems
   double list[16] =  {1e6, 1e4, 6e3, 390, 323, 273, 200, 140, 1, 1e-2, 0, -1e-2, -1, -1e2, -1e4, -1e6};
@@ -385,8 +365,8 @@ mat brent(std::string var, Node* tree, Scope &guessScope){
 
 /**
  * Solver for one dimension problems
- **/
-void solve(Node* tree, Scope &guessScope=blankScope){
+ */
+void solve(Node* tree, Scope &guessScope){
   // Var = number
   if(tree->get_op() == '-'){
     Node** inputs = tree->get_inputs();
@@ -419,8 +399,8 @@ void solve(Node* tree, Scope &guessScope=blankScope){
 
 /**
  * Newton method for multiple dimensions
- **/
-void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
+ */
+void solve(std::vector<Node*> &forest, Scope &guessScope){
 
   // Variables
   Variables vars(forest,guessScope);
@@ -587,5 +567,3 @@ void solve(std::vector<Node*> &forest, Scope &guessScope=blankScope){
     throw std::invalid_argument("not converged @solve");
   }
 }
-
-#endif //_SOLVER_

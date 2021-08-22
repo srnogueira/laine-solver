@@ -1,23 +1,42 @@
 # Paths
-vpath %.cc ./src
-vpath %.hpp ./include
+VPATH = src
 
-# Coolprop
-CPinclude = -ldl -L./lib/coolprop/static -I./lib/coolprop/include -I./lib/coolprop/externals/fmtlib/
+# Coolprop static library
+CPlib = -ldl -L./lib/coolprop/static -I./lib/coolprop/include -I./lib/coolprop/externals/fmtlib/ -lCoolProp
 
-# .hpp files
-H_SOURCE = $(wildcard ./include/*.hpp)
+# Compiler
+CC = g++ -Wall -O3
 
-laine : laine.cc $(H_SOURCE)
-	g++ -Wall -O3 $(CPinclude) ./src/laine.cc -I./include -o ./bin/laine -lCoolProp
+laine : laine.o text.o node.o polish.o matrix.o solver.o reduce.o
+	$(CC) $^ -o $@ $(CPlib)
 
-l : laine.cc $(H_SOURCE)
-	g++ -Wall $(CPinclude) ./src/laine.cc -I./include -o ./bin/laine -lCoolProp
+# Objects
+text.o : text.cc text.hpp
+	$(CC) -c $< -o $@ 
 
-demo : wasm.cc $(H_SOURCE)
-	emcc --bind -O3 ./src/wasm.cc -I./include -o ./laine.js
+node.o : node.cc node.hpp
+	$(CC) -c $< -o $@ $(CPlib)
 
-# Old configurations for CoolProp integration
-# CPinclude = -ldl -L./lib/coolprop/static -I./lib/coolprop/include -I./lib/coolprop/externals/fmtlib/
-# laine : laine.cc text.hpp solver.hpp polish.hpp matrix.hpp node.hpp reduce.hpp
-# 	g++ -Wall -O3 $(CPinclude) laine.cc -o laine -lCoolProp
+polish.o : polish.cc polish.hpp 
+	$(CC) -c $< -o $@ 
+
+matrix.o : matrix.cc matrix.hpp
+	$(CC) -c $< -o $@
+
+solver.o : solver.cc solver.hpp
+	$(CC) -c $< -o $@ 
+
+reduce.o : reduce.cc reduce.hpp
+	$(CC) -c $< -o $@ 
+
+laine.o : laine.cc
+	$(CC) -c $< -o $@
+
+
+#demo : wasm.cc $(H_FILES)
+#	emcc --bind -O3 ./src/wasm.cc -I./include -o ./laine.js
+
+# Utilities
+.PHONY: clean
+clean :
+	rm laine *.o

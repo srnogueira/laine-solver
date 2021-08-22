@@ -2,8 +2,11 @@
 backups/
 lib/
 problems/
-bin/*
 
 # Emacs temp files
 *~
 *#
+
+# Compiled objects
+*.o
+laine

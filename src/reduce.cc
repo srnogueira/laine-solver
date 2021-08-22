@@ -1,31 +1,24 @@
-#include "solver.hpp"
-
-#ifndef _REDUCE_
-#define _REDUCE_
+#include "reduce.hpp"
 
 /**
- * Compare number of vars in trees
- **/
-struct lessVar {
-  Scope* local;
-  lessVar(Scope& input){local = &input;}
-  bool operator() (Node* first, Node* second){
-    int nF = (first->findVars(*local)).size();
-    int nS = (second->findVars(*local)).size();
-    return (nF<nS);
-  }
-};
+ * Comparison for sorting equations
+ */
+bool lessVar::operator() (Node* first, Node* second){
+  int nF = (first->findVars(*local)).size();
+  int nS = (second->findVars(*local)).size();
+  return (nF<nS);
+}
 
 /**
  * Verifies if a tree is "simple"
- **/
-bool simple(Node* tree,Scope &local=blankScope){
+ */
+bool simple(Node* tree,Scope &local){
   Node** childs = tree -> get_inputs();
   char lT = childs[0] -> get_type();
   if (lT == 'v'){
     std::string name = childs[0]->toString();
     if (local.find(name) == local.end()){
-      StringSet vars = childs[1]->findVars();
+      StringSet vars = childs[1]->findVars(local);
       return (vars.find(name) == vars.end());
     } else{
       return false;
@@ -36,8 +29,8 @@ bool simple(Node* tree,Scope &local=blankScope){
 
 /**
  * Removes simple equations from a forest
- **/
-std::vector<Node*> removeSimple(std::vector<Node*> &forest, Scope &local=blankScope){
+ */
+std::vector<Node*> removeSimple(std::vector<Node*> &forest, Scope &local){
   std::vector<Node*> simpleEquations;
   StringSet names;
   for (unsigned i = 0; i<forest.size(); ++i){
@@ -60,8 +53,8 @@ std::vector<Node*> removeSimple(std::vector<Node*> &forest, Scope &local=blankSc
 
 /**
  * Applies algebric substitutions in simple and other equations
- **/
-void algebraicSubs(std::vector<Node*> &simple, std::vector<Node*> &others, Scope &local=blankScope){
+ */
+void algebraicSubs(std::vector<Node*> &simple, std::vector<Node*> &others, Scope &local){
   // Possible substitutions
   const unsigned n = simple.size();
   std::string *names = new std::string[n];
@@ -123,7 +116,7 @@ void algebraicSubs(std::vector<Node*> &simple, std::vector<Node*> &others, Scope
 
 /**
  * Separates equations into blocks and solve them
- **/
+ */
 void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
   lessVar condition(solutions); // Wrap Scope into lessVar
   
@@ -196,11 +189,14 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
   }
 }
 
+/**
+ * Solves the problem
+ */
 void solveProblem(std::vector<std::string> &lines, Scope &solutions){
   /**
    * Get equations
    * Solve equations if possible, otherwise store it
-   **/
+   */
   std::vector<Node*> equations;
   for (unsigned j=0; j<lines.size(); ++j){
     Node* line = parse(lines[j]);
@@ -217,7 +213,7 @@ void solveProblem(std::vector<std::string> &lines, Scope &solutions){
   /**
    * Split the problem
    * Simple equations can be excluded from the main problem
-   **/
+   */
   std::vector<Node*> simple;
   if (!equations.empty()){
     simple = removeSimple(equations,solutions);
@@ -227,7 +223,7 @@ void solveProblem(std::vector<std::string> &lines, Scope &solutions){
   /**
    * Blocks
    * Solve problem spliting into smaller blocks when possible
-   **/
+   */
   if(!equations.empty()){
     solveByBlocks(equations,solutions);
   }
@@ -236,5 +232,3 @@ void solveProblem(std::vector<std::string> &lines, Scope &solutions){
     solveByBlocks(simple,solutions);
   }
 }
-
-#endif //_SOLVER_
