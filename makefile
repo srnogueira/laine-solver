@@ -8,14 +8,14 @@ CPlib = -ldl -L./lib/coolprop/static -I./lib/coolprop/include -I./lib/coolprop/e
 CC = g++ -Wall -O3
 
 laine : laine.o text.o node.o polish.o matrix.o solver.o reduce.o
-	$(CC) $^ -o $@ $(CPlib)
+	$(CC) $^ -o $@ #$(CPlib)
 
 # Objects
 text.o : text.cc text.hpp
 	$(CC) -c $< -o $@ 
 
 node.o : node.cc node.hpp
-	$(CC) -c $< -o $@ $(CPlib)
+	$(CC) -c $< -o $@ #$(CPlib)
 
 polish.o : polish.cc polish.hpp 
 	$(CC) -c $< -o $@ 
@@ -31,7 +31,6 @@ reduce.o : reduce.cc reduce.hpp
 
 laine.o : laine.cc
 	$(CC) -c $< -o $@
-
 
 #demo : wasm.cc $(H_FILES)
 #	emcc --bind -O3 ./src/wasm.cc -I./include -o ./laine.js

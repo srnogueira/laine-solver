@@ -31,7 +31,6 @@ public:
 };
 
 double evalOp(const double left,const double right,const char op);
-double evalFun(const char code,Node** input, Scope &local);
 
 /**
  * NodeDouble - stores a double
@@ -89,7 +88,7 @@ public:
   virtual char get_op(){return op;}
   virtual int get_n(){return n;}
   virtual Node** get_inputs(){return inputs;}
-  virtual double eval(Scope &local){return evalFun(op,inputs,local);}
+  virtual double eval(Scope &local);
   virtual StringSet findVars(Scope &local);
   virtual std::string toString();
   virtual NodeFun* get_copy();
