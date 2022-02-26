@@ -1,7 +1,6 @@
-// #include "CoolProp.h"     // PropsSI
-// #include "HumidAirProp.h" // HAPropsSI
-
 #include "node.hpp" // prototypes
+
+//#include <emscripten.h> // wasm
 
 /**
  * TO-DO
@@ -44,7 +43,7 @@ std::map<unsigned char,std::string> namesOne =
 /**
  * Evaluates a function
  */
-double evalFunOne(const unsigned char code,Node** input,Scope local){
+double evalFunOne(const unsigned char code,Node** input,Scope &local){
   double value = input[0] -> eval(local);
   double ans;
   switch (code){
@@ -109,43 +108,98 @@ std::map<unsigned char,std::string> namesMore =
    {0,"PropsSI"},{1,"HAPropsSI"},{2,"Props1SI"}
   };
 
-// double evalFunMore(const unsigned char code, Node* input, Scope local){
-//   double ans;
-//   switch (code){
-//   case 0:
-//     {
-//       std::string p = input[0]->toString();
-//       std::string v1 = input[1]->toString();
-//       double n1 = input[2] -> eval(local);
-//       std::string v2 = input[3]->toString();
-//       double n2 = input[4] -> eval(local);
-//       std::string fluid = input[5]->toString();
-//       ans = CoolProp::PropsSI(p,v1,n1,v2,n2,fluid);
-//     }
-//     break;
-//   case 1:
-//     {
-//       std::string p = input[0]->toString();
-//       std::string v1 = input[1]->toString();
-//       double n1 = input[2] -> eval(local);
-//       std::string v2 = input[3]->toString();
-//       double n2 = input[4] -> eval(local);
-//       std::string v3 = input[5]->toString();
-//       double n3 = input[6] -> eval(local);
-//       ans = HumidAir::HAPropsSI(p,v1,n1,v2,n2,v3,n3);
-//     }
-//     break;
-//   case 2:
-//     {
-//       std::string p = input[0]->toString();
-//       std::string fluid = input[1]->toString();
-//       ans = CoolProp::Props1SI(p,fluid);
-//     }
-//     break;
-//   default:
-//     throw std::invalid_argument("code @evalFunOne");
-//   }
-// }
+double evalFunMore(const unsigned char code, Node** input, Scope &local){
+  double ans;
+  switch (code){
+  case 0:
+    {
+      // Get data
+      std::string p = input[0]->toString();
+      std::string v1 = input[1]->toString();
+      double n1 = input[2] -> eval(local);
+      std::string v2 = input[3]->toString();
+      double n2 = input[4] -> eval(local);
+      std::string fluid = input[5]->toString();
+
+      // Valid values
+      if (std::isnan(n1) || std::isnan(n2)){
+	return NAN;
+      }
+
+      //CoolProp::set_config_bool(DONT_CHECK_PROPERTY_LIMITS,true);
+      // Check temperature and pressure limits
+      double Tmax, Pmax;
+      if (v1 == "Q" || v2 == "Q"){
+      	Tmax = CoolProp::PropsSI("TCRIT","T",298.15,"P",1E5,fluid);
+      	Pmax = CoolProp::PropsSI("PCRIT","T",298.15,"P",1E5,fluid);
+      } else {
+      	Tmax = CoolProp::PropsSI("TMAX","T",298.15,"P",1E5,fluid);
+      	Pmax = CoolProp::PropsSI("PMAX","T",298.15,"P",1E5,fluid);
+      }
+
+      double Tmin = CoolProp::PropsSI("TMIN","T",298.15,"P",1E5,fluid);
+      double Pmin = CoolProp::PropsSI("PMIN","T",298.15,"P",1E5,fluid);
+      // Temperature and pressure limits
+      if (v1 == "T"){
+      	if (n1 >= Tmax || n1 <= Tmin){
+      	  return NAN;
+      	} else if (v2 == "P"){
+      	  if (n2 >= Pmax || n2 <= Pmin){
+      	    return NAN;
+      	  }
+      	}
+      } else if (v2 == "T"){
+      	if (n2 >= Tmax || n2 <= Tmin){
+      	  return NAN;
+      	} else if (v1 == "P"){
+      	  if (n1 >= Pmax || n1 <= Pmin){
+      	   return NAN;
+      	  }
+      	}
+      }
+
+      // if (v1 == "T"){
+      // 	emscripten_run_script("console.log('T')");
+      // } else if (v1 == "P"){
+      // 	emscripten_run_script("console.log('P')");
+      // } else if (v1 == "H"){
+      // 	emscripten_run_script("console.log('H')");
+      // }
+      ans = CoolProp::PropsSI(p,v1,n1,v2,n2,fluid);
+    }
+    break;
+  case 1:
+    {
+      std::string p = input[0]->toString();
+      std::string v1 = input[1]->toString();
+      double n1 = input[2] -> eval(local);
+      std::string v2 = input[3]->toString();
+      double n2 = input[4] -> eval(local);
+      std::string v3 = input[5]->toString();
+      double n3 = input[6] -> eval(local);
+      try{
+	ans = HumidAir::HAPropsSI(p,v1,n1,v2,n2,v3,n3);
+      } catch (std::exception &e){
+	ans = NAN;
+      }
+    }
+    break;
+  case 2:
+    {
+      std::string p = input[0]->toString();
+      std::string fluid = input[1]->toString();
+      try{
+	ans = CoolProp::Props1SI(p,fluid);
+      }catch (std::exception &e){
+	ans = NAN;
+      }
+    }
+    break;
+  default:
+    throw std::invalid_argument("code @evalFunOne");
+  }
+  return ans;
+}
 
 /**
  * NodeFun constructor
@@ -177,8 +231,8 @@ double NodeFun::eval(Scope &local){
   if (n==1){
     return evalFunOne(op,inputs,local);
   } else{
-    return 0;
-    //return evalFunMore(op,inputs,local);
+    //return 0;
+    return evalFunMore(op,inputs,local);
   }
 }
 
@@ -255,47 +309,34 @@ NodeOp::NodeOp(char symbol, Node* a, Node* b){
  * NodeOp eval
  */
 double NodeOp::eval(Scope &local){
-  const double left = inputs[0] -> eval(local);
-  const double right = inputs[1] -> eval(local);
-  return evalOp(left,right,op);
-}
-
-/**
- * Evaluates a operation
- */
-double evalOp(const double left,const double right,const char op){
-  double ans;
-  switch (op){
+  double n1 = inputs[0] -> eval(local);
+  double n2 = inputs[1] -> eval(local);
+  switch (op) {
   case '+':
-    ans = left+right;
-    break;
+    return n1+n2;
   case '-':
-    ans = left-right;
-    break;
+    return n1-n2;
   case '*':
-    ans = left*right;
-    break;
+    return n1*n2;
   case '/':
-    ans = left/right;
-    break;
+    return n1/n2;
   case '^':
-    ans = pow(left,right);
-    break;
+    return pow(n1,n2);
   default:
-    throw std::invalid_argument("op @evalOP");
+    throw std::invalid_argument("op @evalOp");
   }
-  return ans;
+  return 0;
 }
 
 /**
- * NodeOp to string
+ * NodeFun give string
  */
 std::string NodeOp::toString(){
   std::string out;
-  out+= inputs[0] -> toString() + ' ' ;
-  out+= inputs[1] -> toString() + ' ' ;
-  out+= get_op();
-  out+= ' ';
+  for (int i = 0; i<n; ++i){
+    out += inputs[i] -> toString()+ ' ';
+  }
+  out += op;
   return out;
 }
 

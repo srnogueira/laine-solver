@@ -6,41 +6,59 @@ int main(){
   std::cout << "Laine | C++ console version" << std::endl;
   srand(time(NULL)); // seed for random numbers
   
-  /**
-   * Get file
-   **/
-  std::cout << "Filename: ";
-  std::string filename;
-  std::cin >> filename;
-  std::vector<std::string> lines = getLines(filename);
-
-  /**
-   * Solve problem
-   **/
-  char input = 'y';
-  while (input){
-    const auto t1 = std::chrono::high_resolution_clock::now(); // start chrono
-    Scope solutions;
-    solveProblem(lines,solutions);
-    const auto t2 = std::chrono::high_resolution_clock::now();
-    const auto ms_int= std::chrono::duration_cast<std::chrono::microseconds>(t2-t1);
-    std::cout << "Time: "<< ms_int.count()/1e3<< " ms" << std::endl;
-
+  while (true){
     /**
-     * Print results
+     * Get file
      **/
-    for (auto &kv:solutions){
-      std::cout << kv.first << ": " << kv.second << std::endl;
+    std::cout << "Filename: ";
+    std::string filename;
+    std::cin >> filename;
+    std::vector<std::string> lines = getLines(filename);
+    
+    while (true){
+      /**
+       * Solve problem
+       **/
+      const auto t1 = std::chrono::high_resolution_clock::now(); // start chrono
+      Scope solutions;
+      solveProblem(lines,solutions);
+      const auto t2 = std::chrono::high_resolution_clock::now();
+      const auto ms_int= std::chrono::duration_cast<std::chrono::microseconds>(t2-t1);
+      std::cout << "Time: "<< ms_int.count()/1e3<< " ms" << std::endl;
+
+      /**
+       * Print results
+       **/
+      for (auto &kv:solutions){
+	std::cout << kv.first << ": " << kv.second << std::endl;
+      }
+
+      // Repeat?
+      char solveAgain = 'x';
+      while (solveAgain != 'y' && solveAgain != 'n'){
+	std::cout << "Solve again? (y/n)" << std::endl;
+	std::cin >> solveAgain;
+      }
+      if (solveAgain == 'n'){
+	break; // solve loop
+      }
+      
     }
 
-    // Repeat?
-    std::cin >> input;
+    // New file?
+    char newFile = 'x';
+    while (newFile != 'y' && newFile != 'n'){
+      std::cout << "Solve another problem? (y/n)" << std::endl;
+      std::cin >> newFile;
+    }    
+    if (newFile == 'n'){
+      break; // new file loop
+    }
+    
   }
   return true;
 }
 
 /* TO-DO
- * Create a equation class: similar to javascript
  * A "line" parser
- * Algebraic substitutions
  */

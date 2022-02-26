@@ -42,7 +42,7 @@ std::vector<Guess> findGuess(Variables &vars, std::vector<Node*> &forest, Scope 
 std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Scope &guessScope);
 
 mat brent(std::string var, Node* tree, Scope &guessScope);
-void solve(Node* tree, Scope &guessScope);
-void solve(std::vector<Node*> &forest, Scope &guessScope);
+bool solve(Node* tree, Scope &guessScope);
+bool solve(std::vector<Node*> &forest, Scope &guessScope);
 
 #endif //_SOLVER_

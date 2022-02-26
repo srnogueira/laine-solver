@@ -1,4 +1,5 @@
 #include "solver.hpp" // prototypes
+//#include <emscripten.h> // wasm
 
 /* *
  * TO-DO
@@ -177,7 +178,7 @@ double evalError(const mat &answers,const mat &side){
  * Update scope, evaluate and sum errors
  */
 double evalError(const mat &guessN, Variables &vars, std::vector<Node*> &forest, Scope &guessScope){
-  // Update
+  // Update	
   updateScope(guessScope, vars, guessN);
   // Calculate
   double error=0;
@@ -203,14 +204,16 @@ std::vector<Guess> findGuess(Variables &vars, std::vector<Node*> &forest, Scope 
   double val, error;
   double list[8] = {0, 1e-3, 0.1, 1, 10, 200, 1e3, 1e5};
   std::vector<Guess> guessList;
-  const short max_tries = 10;
+  const short max_tries = 1;//0;
   short count = 0;
+  int signal;
   while (guessList.empty() && count < max_tries){
     for (int j=0;j<8;++j){
       // Set value
       for (int i=0;i<guessN.rows;++i){
 	srand(time(NULL)+rand()+i);
-	val = (1+(rand()%1001)*1e-3)*list[j]; // -/+ 10% guess
+	signal = rand()%10 > 4 ? 1 : -1;
+	val = (1+(rand()%1001)*1e-3*signal/2)*list[j]; // -/+ 10% guess
 	guessN.set(i,0,val);
       }
       // Update, evaluate and sum errors
@@ -224,9 +227,10 @@ std::vector<Guess> findGuess(Variables &vars, std::vector<Node*> &forest, Scope 
   }
   if (!guessList.empty()){
     std::sort(guessList.begin(),guessList.end(),lessError);
-  } else{
-    throw std::invalid_argument("no guess @findGuess");
   }
+  //else{
+  //  throw std::invalid_argument("no guess @findGuess");
+  //}
   return guessList;
 }
 
@@ -238,20 +242,23 @@ std::vector<Guess> findGuess(Variables &vars, std::vector<Node*> &forest, Scope 
 std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Scope &guessScope){
   mat guessN(vars.all.size(),1);
   double x,y, error;
-  double list[8] = {0, 1e-3, 0.1, 1, 10, 200, 1e3, 1e5};
+  double list[8] = {0, 1e-3, 0.1, 1, 10, 200};
   std::vector<Guess> guessList;
   double higher = std::numeric_limits<double>::infinity();
-  const short max_tries = 10;
+  const short max_tries = 1;//0;
   short count = 0;
+  int signal;
   while (guessList.empty() && count < max_tries){
     for (int j=0;j<8;++j){ 
       srand(time(NULL)+rand()+j);
-      x = (1+(rand()%1001)*1e-3)*list[j]; // 0 to + 1.000
+      signal = rand()%10 > 4 ? 1 : -1;
+      x = (1+(rand()%1001)*1e-3*signal/2)*list[j]; // 0 to + 1.000
       guessN.set(0,0,x);
       // Set value
       for (int i=0;i<8;++i){
 	srand(time(NULL)+rand()+i);
-	y = (1+(rand()%1001)*1e-3)*list[i]; // 0 to + 1.000
+	signal = rand()%10 > 4 ? 1 : -1;
+	y = (1+(rand()%1001)*1e-3*signal/2)*list[i]; // 0 to + 1.000
 	guessN.set(1,0,y);
 	error = evalError(guessN, vars, forest, guessScope);
 	if (isfinite(error) && (guessList.size()<3 || error < higher)){
@@ -264,9 +271,10 @@ std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Sc
   }
   if (!guessList.empty()){
     std::sort(guessList.begin(),guessList.end(),lessError);
-  } else{
-    throw std::invalid_argument("no guess @findGuessPair");
   }
+  //else{
+  //  throw std::invalid_argument("no guess @findGuessPair");
+  //}
   return guessList;
 }
 
@@ -366,7 +374,7 @@ mat brent(std::string var, Node* tree, Scope &guessScope){
 /**
  * Solver for one dimension problems
  */
-void solve(Node* tree, Scope &guessScope){
+bool solve(Node* tree, Scope &guessScope){
   // Var = number
   if(tree->get_op() == '-'){
     Node** inputs = tree->get_inputs();
@@ -376,12 +384,12 @@ void solve(Node* tree, Scope &guessScope){
 	(rtype == 'n' || (inputs[1]->findVars(guessScope)).empty()) ){
       std::string name = inputs[0]->toString();
       guessScope[name] = inputs[1]->eval(guessScope);
-      return;
+      return true;
     } else if (rtype == 'v' &&
 	       (ltype == 'n' || (inputs[0]->findVars(guessScope)).empty()) ){
       std::string name = inputs[1]->toString();
       guessScope[name] = inputs[0]->eval(guessScope);
-      return;
+      return true;
     }
   }
   
@@ -392,23 +400,27 @@ void solve(Node* tree, Scope &guessScope){
 
   // Error
   if (isnan(guess.get(0,0))){
-    throw std::invalid_argument("brent failed @solve");
+    //throw std::invalid_argument("brent failed @solve");
+    return false;
   }
+  
+  return true;
 }
 
 
 /**
  * Newton method for multiple dimensions
  */
-void solve(std::vector<Node*> &forest, Scope &guessScope){
+bool solve(std::vector<Node*> &forest, Scope &guessScope){
 
   // Variables
   Variables vars(forest,guessScope);
   const unsigned n = vars.all.size();
-  
+
   // Check size
   if(n != forest.size()){
-    throw std::invalid_argument("forest size @solve");
+    //throw std::invalid_argument("forest size @solve");
+    return false;
   }
 
   // Guess
@@ -419,6 +431,12 @@ void solve(std::vector<Node*> &forest, Scope &guessScope){
     guessList=findGuess(vars,forest,guessScope);    
   }
 
+  
+  // Guess size
+  if (guessList.size()==0){
+    return false;
+  }
+  
   // Matrix
   mat guess(n,1);
   mat answers(n,1);
@@ -467,7 +485,7 @@ void solve(std::vector<Node*> &forest, Scope &guessScope){
     // Newton method: create function to eval convergence
     while (error_dx > 5e-6 && (error_rel > 1e-3 || error > 1e-6) &&
 	   count < max){
-      
+
       if (useBroyden){
 	evalBroyden(jac, deltaG, deltaF);
 	computed = false;
@@ -510,7 +528,7 @@ void solve(std::vector<Node*> &forest, Scope &guessScope){
       
       // Line-search loop [Most time is expended here]
       count_line = 0;
-      do {	
+      do {
 	updateScope(guessScope,vars,guess);
 	evalForest(forest,guessScope,answers,side);
 	error_line = evalError(answers);
@@ -532,6 +550,7 @@ void solve(std::vector<Node*> &forest, Scope &guessScope){
       if (!computed && !useBroyden){
 	continue;
       }
+
 
       // Required for the Broyden method
       deltaG = guess-deltaG;
@@ -564,6 +583,9 @@ void solve(std::vector<Node*> &forest, Scope &guessScope){
   }
       
   if(count == max){
-    throw std::invalid_argument("not converged @solve");
+    //throw std::invalid_argument("not converged @solve");
+    return false;
   }
+
+  return true;
 }

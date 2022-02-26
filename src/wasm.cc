@@ -2,31 +2,34 @@
 #include "solver.hpp" // numerical solver
 #include "reduce.hpp" // block solver and problem solver
 #include <emscripten/bind.h> // wasm
+#include <emscripten.h> // wasm
 
 /* *
  * Evaluates the problem from a string
  * Function call for wasm
  */
 std::string solveText(std::string text){
+  srand(time(NULL)); // seed for random numbers
+
   /**
    * Break into lines
-   **/
+   **/  
   std::vector<std::string> lines;
   while (!text.empty()){
     std::size_t pos = text.find('\n');
     if (pos != std::string::npos){
       lines.push_back(text.substr(0,pos));
       if (pos != text.size()){
-	text = text.substr(pos+1);
+  	text = text.substr(pos+1);
       } else{
-	text.clear();
+  	text.clear();
       }
     } else{
       lines.push_back(text);
       text.clear();
     }    
   }
-  
+
   /**
    * Get expressions
    **/
@@ -36,11 +39,10 @@ std::string solveText(std::string text){
     while (!line.empty()){
       subline = breakLines(line);
       if (!subline.empty()){
-	linesClear.push_back(minusExp(subline));
+  	linesClear.push_back(minusExp(subline));
       }
     }
   }
-
   /**
    * Solve
    **/
@@ -66,10 +68,19 @@ std::string solveText(std::string text){
 // compile with: emcc --bind -o wasm.html wasm.cc
 using namespace emscripten;
 
- EMSCRIPTEN_BINDINGS(my_module) {
-   function("laine", &solveText);
- }
+EMSCRIPTEN_BINDINGS(my_module) {
+  function("laine", &solveText);
+}
+
+std::string getExceptionMessage(intptr_t exceptionPtr) {
+  return std::string(reinterpret_cast<std::exception *>(exceptionPtr)->what());
+}
+
+EMSCRIPTEN_BINDINGS(Bindings) {
+  emscripten::function("getExceptionMessage", &getExceptionMessage);
+};
 
 int main(){
   return 0;
 }
+

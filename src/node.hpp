@@ -7,6 +7,10 @@
 #include <set>            // sets variables names
 #include <stdexcept>      // exceptions
 
+#include "CoolProp.h"     // PropsSI
+#include "AbstractState.h"     // PropsSI
+#include "HumidAirProp.h" // HAPropsSI
+
 // Scope
 typedef std::map<std::string,double> Scope;
 
@@ -106,5 +110,5 @@ public:
   virtual std::string toString();
   virtual NodeOp* get_copy();
 };
-
+ 
 #endif // _NODE_

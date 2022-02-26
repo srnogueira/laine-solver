@@ -1,5 +1,5 @@
 #include "reduce.hpp"
-
+    
 /**
  * Comparison for sorting equations
  */
@@ -119,7 +119,7 @@ void algebraicSubs(std::vector<Node*> &simple, std::vector<Node*> &others, Scope
  */
 void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
   lessVar condition(solutions); // Wrap Scope into lessVar
-  
+
   while (!equations.empty()){    
     // Wrapped with scope (very important)
     std::sort(equations.begin(),equations.end(),condition);
@@ -128,14 +128,20 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
     StringSet varBlocks = equations[0] -> findVars(solutions);
     std::vector<Node*> block;
 
+    // for (auto &name:varBlocks){
+    //   std::cout << name << std::endl;
+    // }
+    
     // Verify if a lower block is possible
     if (varBlocks.size() < equations.size()){
       block.push_back(equations[0]);
       equations.erase(equations.begin());
+    } else if (varBlocks.size() > equations.size()){
+      throw std::invalid_argument("More variables than equations");
     } else{
       std::swap(equations,block);
     }
-
+    
     // Progressively add equations to the block
     while (varBlocks.size() != block.size()){
       for (unsigned i=0;i<equations.size(); ++i){
@@ -159,17 +165,18 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
     
     // Solve block
     int count = 0;
-    const int max_count = 30;
+    const int max_count = 5;
+    bool converged;
     while (count < max_count){
-      try{
-	// Try first Brent and after Newton
-	if (block.size() == 1 && count == 0){
-	  solve(block[0],solutions);
-	} else{
-	  solve(block,solutions);
-	}
+      // Try first Brent and after Newton
+      if (block.size() == 1 && count == 0){
+	converged = solve(block[0],solutions);
+      } else{
+	converged = solve(block,solutions);
+      }	
+      if (converged){
 	break;
-      } catch (std::exception &e){
+      } else{
 	++count;
 	// Clear guesses
 	for (const auto &name:varBlocks){
@@ -177,11 +184,20 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
 	}
 	continue;
       }
+      // catch (std::exception &e){
+      // 	++count;
+      // 	// Clear guesses
+      // 	for (const auto &name:varBlocks){
+      // 	  solutions.erase(name);
+      // 	}
+      // 	continue;
+      // }
     }
+    
     if (count == max_count){
       throw std::invalid_argument("not converged @solveByBlocks");
     }
-    
+
     // Release memory
     for(auto &eq:block){
       delete eq;
@@ -197,19 +213,59 @@ void solveProblem(std::vector<std::string> &lines, Scope &solutions){
    * Get equations
    * Solve equations if possible, otherwise store it
    */
+  
   std::vector<Node*> equations;
   for (unsigned j=0; j<lines.size(); ++j){
     Node* line = parse(lines[j]);
     StringSet lineVars = line -> findVars(solutions);
     // std::cout << "(" << j << ")" << "\t" << line -> toString() << std::endl;
+    bool converged;
     if (lineVars.size() == 1){
-      solve(line,solutions);
-      delete line; // clear memory
+      //try{
+      converged = solve(line,solutions);
+      if (converged){
+	delete line; // clear memory
+      } else { //catch (std::exception &e){
+	equations.push_back(line);
+      }
     } else{
       equations.push_back(line);
     }
   }
 
+  /**
+   * Solve 1D
+   * Solves the 1D problems and iterate
+   */
+  // if (!equations.empty()){
+  //   lessVar condition(solutions); // Wrap Scope into lessVar
+  //   std::sort(equations.begin(),equations.end(),condition); // Sort
+  //   StringSet lineVars = equations[0] -> findVars(solutions);
+  //   while (lineVars.size() == 1){
+  //     while (lineVars.size() == 1){
+  // 	try{
+  // 	  // Brent
+  // 	  solve(equations[0],solutions);
+  // 	} catch (std::exception &e){
+  // 	  // Newton
+  // 	  solve(equations,solutions);
+  // 	}
+  // 	equations.erase(equations.begin());
+  // 	if (!equations.empty()){
+  // 	  lineVars = equations[0] -> findVars(solutions);
+  // 	} else{
+  // 	  break;
+  // 	}
+  //     }
+  //     if (!equations.empty()){
+  // 	std::sort(equations.begin(),equations.end(),condition); // Sort
+  // 	lineVars = equations[0] -> findVars(solutions); // update
+  //     } else{
+  // 	break;
+  //     }
+  //   }
+  // }
+  
   /**
    * Split the problem
    * Simple equations can be excluded from the main problem
@@ -220,6 +276,15 @@ void solveProblem(std::vector<std::string> &lines, Scope &solutions){
     algebraicSubs(simple,equations,solutions);
   }
 
+  // for (unsigned i=0;i<equations.size();++i){
+  //   std::cout << equations[i]->toString() << std::endl;
+  // }
+  // std::cout << std::endl;
+  // for (unsigned i=0;i<simple.size();++i){
+  //   std::cout << simple[i]->toString() << std::endl;
+  // }
+  // std::cout << std::endl;
+
   /**
    * Blocks
    * Solve problem spliting into smaller blocks when possible
@@ -227,7 +292,7 @@ void solveProblem(std::vector<std::string> &lines, Scope &solutions){
   if(!equations.empty()){
     solveByBlocks(equations,solutions);
   }
-  
+
   if(!simple.empty()){
     solveByBlocks(simple,solutions);
   }

@@ -17,13 +17,17 @@
 	  let text = document.getElementById("box").value;
 	  let out = document.getElementById("out");
 	  try{
+	      let i = performance.now()
 	      let solution = JSON.parse(Module.laine(text));
+	      let f = performance.now()
+	      console.log(f-i," ms")
 	      let pretty = "";
 	      for (const name in solution) {
 		  pretty += `${name} = ${solution[name]}<br>`;
 	      }
 	      out.innerHTML = pretty;
-	  } catch{
+	  } catch (e){
+	      console.error(Module.getExceptionMessage(e));
 	      out.innerHTML = "An error was found";
 	  }
       }

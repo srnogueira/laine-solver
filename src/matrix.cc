@@ -1,4 +1,5 @@
 #include "matrix.hpp"
+//#include <emscripten.h> // wasm
 
 /**
  * mat construtor
@@ -87,7 +88,7 @@ mat mat::operator-= (mat& other){
 mat& mat::operator=(mat other){
   rows = std::move(other.rows);
   columns = std::move(other.columns);
-  delete eArray; // avoid memory leaks
+  delete[] eArray; // avoid memory leaks
   eArray = std::exchange(other.eArray,nullptr);
   return *this;
 }

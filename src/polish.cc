@@ -131,7 +131,9 @@ void addFunction(std::stack<std::string> &funStack,
     inputs[i] = inputStack.top();
     inputStack.pop();
   }
-  Node* fun = new NodeFun(funStack.top(),n,inputs);
+  Node* fun;
+  fun = new NodeFun(funStack.top(),n,inputs);
+  
   funStack.pop();
   tkStack.push(fun);
   opStack.pop();
@@ -226,8 +228,8 @@ Node* parseTokens(const std::vector<Token> &tokens){
   while(!opStack.empty()){
     addOperation(opStack,tkStack);
   }
-  // Debut
-  // std::cout << tkStack.top() -> toString() << std::endl;
+  // Debug
+  //std::cout << tkStack.top() -> toString() << std::endl;
   return tkStack.top();
 }
 
