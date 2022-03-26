@@ -232,39 +232,6 @@ void solveProblem(std::vector<std::string> &lines, Scope &solutions){
       equations.push_back(line);
     }
   }
-
-  /**
-   * Solve 1D
-   * Solves the 1D problems and iterate
-   */
-  // if (!equations.empty()){
-  //   lessVar condition(solutions); // Wrap Scope into lessVar
-  //   std::sort(equations.begin(),equations.end(),condition); // Sort
-  //   StringSet lineVars = equations[0] -> findVars(solutions);
-  //   while (lineVars.size() == 1){
-  //     while (lineVars.size() == 1){
-  // 	try{
-  // 	  // Brent
-  // 	  solve(equations[0],solutions);
-  // 	} catch (std::exception &e){
-  // 	  // Newton
-  // 	  solve(equations,solutions);
-  // 	}
-  // 	equations.erase(equations.begin());
-  // 	if (!equations.empty()){
-  // 	  lineVars = equations[0] -> findVars(solutions);
-  // 	} else{
-  // 	  break;
-  // 	}
-  //     }
-  //     if (!equations.empty()){
-  // 	std::sort(equations.begin(),equations.end(),condition); // Sort
-  // 	lineVars = equations[0] -> findVars(solutions); // update
-  //     } else{
-  // 	break;
-  //     }
-  //   }
-  // }
   
   /**
    * Split the problem

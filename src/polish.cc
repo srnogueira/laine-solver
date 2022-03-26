@@ -244,8 +244,7 @@ Node* parseTokens(const std::vector<Token> &tokens){
  * Parses a string into a tree
  */
 Node* parse(std::string line){
-  Node* tree = parseTokens(tokenize(line));
-  return tree;
+  return parseTokens(tokenize(line));
 }
 
 /**

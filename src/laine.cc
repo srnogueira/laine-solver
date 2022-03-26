@@ -14,7 +14,7 @@ int main(){
     std::cout << "Filename: ";
     std::string filename;
     std::cin >> filename;
-    std::vector<std::string> lines = getLines(filename);
+    std::vector<std::string> lines = getLinesFromFile(filename);
     
     while (true){
       /**

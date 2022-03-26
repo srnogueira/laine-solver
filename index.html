@@ -6,24 +6,29 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="author" content="Rafael Nogueira Nakashima" />
     <meta name="description" content="laine C++ demo"/>
-    <meta name="theme-color" content="#C93833" />
-    <link rel="manifest" href="manifest.json" />
     <!-- head -->
     <title>laine C++ demo</title>
     <!-- scripts -->
     <script defer src="./laine.js"></script>
     <script>
+      "use strict";
+      var saved; // Global variable
+      
+      // Solver
       function solve(){
-	  let text = document.getElementById("box").value;
+	  const text = document.getElementById("box").value;
 	  let out = document.getElementById("out");
 	  try{
-	      let i = performance.now()
-	      let solution = JSON.parse(Module.laine(text));
-	      let f = performance.now()
-	      console.log(f-i," ms")
+	      const i = performance.now();
+	      const solution = JSON.parse(Module.laine(text));
+	      const f = performance.now();
+	      console.log(`Evaluation time: ${f-i} ms`);
+
 	      let pretty = "";
+	      saved = "";
 	      for (const name in solution) {
 		  pretty += `${name} = ${solution[name]}<br>`;
+		  saved += `${name} = ${solution[name]}\n`;
 	      }
 	      out.innerHTML = pretty;
 	  } catch (e){
@@ -31,6 +36,14 @@
 	      out.innerHTML = "An error was found";
 	  }
       }
+
+      // Shortcut
+      function shortcut(key) {
+	  if (key.code === "F2") {
+	      solve();
+	  }
+      }
+      document.onkeydown = shortcut;
     </script>
     <!-- body -->
     <body class="body">

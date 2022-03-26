@@ -11,38 +11,13 @@
 std::string solveText(std::string text){
   srand(time(NULL)); // seed for random numbers
 
-  /**
-   * Break into lines
-   **/  
-  std::vector<std::string> lines;
-  while (!text.empty()){
-    std::size_t pos = text.find('\n');
-    if (pos != std::string::npos){
-      lines.push_back(text.substr(0,pos));
-      if (pos != text.size()){
-  	text = text.substr(pos+1);
-      } else{
-  	text.clear();
-      }
-    } else{
-      lines.push_back(text);
-      text.clear();
-    }    
-  }
+  // Get expressions lines
+  std::vector<std::string> lines = getLinesFromText(text);
+  // Extract only problem lines and keep guess lines without "?"
+  // Parse all guess lines as a problem and store the solution
+  // Use these stored solutions to alter the behaviour of findGuesses
 
-  /**
-   * Get expressions
-   **/
-  std::vector<std::string> linesClear;
-  std::string subline;
-  for (auto &line:lines){
-    while (!line.empty()){
-      subline = breakLines(line);
-      if (!subline.empty()){
-  	linesClear.push_back(minusExp(subline));
-      }
-    }
-  }
+  
   /**
    * Solve
    **/
@@ -79,8 +54,4 @@ std::string getExceptionMessage(intptr_t exceptionPtr) {
 EMSCRIPTEN_BINDINGS(Bindings) {
   emscripten::function("getExceptionMessage", &getExceptionMessage);
 };
-
-int main(){
-  return 0;
-}
 

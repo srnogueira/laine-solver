@@ -419,8 +419,7 @@ bool solve(std::vector<Node*> &forest, Scope &guessScope){
 
   // Check size
   if(n != forest.size()){
-    //throw std::invalid_argument("forest size @solve");
-    return false;
+    throw std::invalid_argument("forest size @solve");
   }
 
   // Guess
@@ -430,7 +429,6 @@ bool solve(std::vector<Node*> &forest, Scope &guessScope){
   } else{
     guessList=findGuess(vars,forest,guessScope);    
   }
-
   
   // Guess size
   if (guessList.size()==0){
@@ -550,7 +548,6 @@ bool solve(std::vector<Node*> &forest, Scope &guessScope){
       if (!computed && !useBroyden){
 	continue;
       }
-
 
       // Required for the Broyden method
       deltaG = guess-deltaG;

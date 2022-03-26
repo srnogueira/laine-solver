@@ -5,11 +5,12 @@
 /**
  * TO-DO
  * Automatic prune nodes that can be computed
+ * Add units, arrays and others
+ * String variables could use the function toString to return the value, multiple scopes
  *
  * NOT-DO
  * Variable = "string" (implement as a equation parser to scope)
  * User-defined functions (implement as a equation parser to scope)
- * makes evalFun accept doubles and put everything in another header file
  */
 
 /**
@@ -101,12 +102,12 @@ double evalFunOne(const unsigned char code,Node** input,Scope &local){
 
 std::map<std::string,unsigned char> funsMore =
   {
-   {"",0}
+   {"HAPropsSI",0},{"Props1SI",1}
   };
 
 std::map<unsigned char,std::string> namesMore =
   {
-   {0,""}
+   {0,"HAPropsSI"},{1,"Props1SI"}
   };
 
 double evalFunMore(const unsigned char code, Node** input, Scope &local){
@@ -114,7 +115,23 @@ double evalFunMore(const unsigned char code, Node** input, Scope &local){
   switch (code){
   case 0:
     {
-      return 0;
+      std::string p = input[0]->toString();
+      std::string v1 = input[1]->toString();
+      double n1 = input[2] -> eval(local);
+      std::string v2 = input[3]->toString();
+      double n2 = input[4] -> eval(local);
+      std::string v3 = input[5]->toString();
+      double n3 = input[6] -> eval(local);
+      ans = HumidAir::HAPropsSI(p,v1,n1,v2,n2,v3,n3);
+      // OBS: CoolProp library is compiled without error report
+    }
+    break;
+  case 1:
+    {
+      std::string p = input[0]->toString();
+      std::string fluid = input[1]->toString();
+      ans = CoolProp::Props1SI(p,fluid);
+      // OBS: CoolProp library is compiled without error report
     }
     break;
   default:
