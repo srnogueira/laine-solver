@@ -96,16 +96,17 @@ double evalFunOne(const unsigned char code,Node** input,Scope &local){
 }
 
 /**
- * CoopProp functions
+ * Functions with multiples inputs
  */
+
 std::map<std::string,unsigned char> funsMore =
   {
-   {"PropsSI",0},{"HAPropsSI",1},{"Props1SI",2}
+   {"",0}
   };
 
 std::map<unsigned char,std::string> namesMore =
   {
-   {0,"PropsSI"},{1,"HAPropsSI"},{2,"Props1SI"}
+   {0,""}
   };
 
 double evalFunMore(const unsigned char code, Node** input, Scope &local){
@@ -113,86 +114,7 @@ double evalFunMore(const unsigned char code, Node** input, Scope &local){
   switch (code){
   case 0:
     {
-      // Get data
-      std::string p = input[0]->toString();
-      std::string v1 = input[1]->toString();
-      double n1 = input[2] -> eval(local);
-      std::string v2 = input[3]->toString();
-      double n2 = input[4] -> eval(local);
-      std::string fluid = input[5]->toString();
-
-      // Valid values
-      if (std::isnan(n1) || std::isnan(n2)){
-	return NAN;
-      }
-
-      //CoolProp::set_config_bool(DONT_CHECK_PROPERTY_LIMITS,true);
-      // Check temperature and pressure limits
-      double Tmax, Pmax;
-      if (v1 == "Q" || v2 == "Q"){
-      	Tmax = CoolProp::PropsSI("TCRIT","T",298.15,"P",1E5,fluid);
-      	Pmax = CoolProp::PropsSI("PCRIT","T",298.15,"P",1E5,fluid);
-      } else {
-      	Tmax = CoolProp::PropsSI("TMAX","T",298.15,"P",1E5,fluid);
-      	Pmax = CoolProp::PropsSI("PMAX","T",298.15,"P",1E5,fluid);
-      }
-
-      double Tmin = CoolProp::PropsSI("TMIN","T",298.15,"P",1E5,fluid);
-      double Pmin = CoolProp::PropsSI("PMIN","T",298.15,"P",1E5,fluid);
-      // Temperature and pressure limits
-      if (v1 == "T"){
-      	if (n1 >= Tmax || n1 <= Tmin){
-      	  return NAN;
-      	} else if (v2 == "P"){
-      	  if (n2 >= Pmax || n2 <= Pmin){
-      	    return NAN;
-      	  }
-      	}
-      } else if (v2 == "T"){
-      	if (n2 >= Tmax || n2 <= Tmin){
-      	  return NAN;
-      	} else if (v1 == "P"){
-      	  if (n1 >= Pmax || n1 <= Pmin){
-      	   return NAN;
-      	  }
-      	}
-      }
-
-      // if (v1 == "T"){
-      // 	emscripten_run_script("console.log('T')");
-      // } else if (v1 == "P"){
-      // 	emscripten_run_script("console.log('P')");
-      // } else if (v1 == "H"){
-      // 	emscripten_run_script("console.log('H')");
-      // }
-      ans = CoolProp::PropsSI(p,v1,n1,v2,n2,fluid);
-    }
-    break;
-  case 1:
-    {
-      std::string p = input[0]->toString();
-      std::string v1 = input[1]->toString();
-      double n1 = input[2] -> eval(local);
-      std::string v2 = input[3]->toString();
-      double n2 = input[4] -> eval(local);
-      std::string v3 = input[5]->toString();
-      double n3 = input[6] -> eval(local);
-      try{
-	ans = HumidAir::HAPropsSI(p,v1,n1,v2,n2,v3,n3);
-      } catch (std::exception &e){
-	ans = NAN;
-      }
-    }
-    break;
-  case 2:
-    {
-      std::string p = input[0]->toString();
-      std::string fluid = input[1]->toString();
-      try{
-	ans = CoolProp::Props1SI(p,fluid);
-      }catch (std::exception &e){
-	ans = NAN;
-      }
+      return 0;
     }
     break;
   default:
@@ -204,7 +126,7 @@ double evalFunMore(const unsigned char code, Node** input, Scope &local){
 /**
  * NodeFun constructor
  */
-NodeFun::NodeFun(std::string alias, int number, Node** var){  
+NodeFun::NodeFun(std::string alias, int number, Node** var){
   n = number;
   op = n == 1 ? funsOne[alias] : funsMore[alias];
   inputs = new Node*[n];
@@ -235,6 +157,7 @@ double NodeFun::eval(Scope &local){
     return evalFunMore(op,inputs,local);
   }
 }
+
 
 /**
  * NodeFun find vars
@@ -347,4 +270,103 @@ NodeOp* NodeOp::get_copy(){
   Node* left = inputs[0]->get_copy();
   Node* right = inputs[1]->get_copy();
   return new NodeOp(op,left,right);
+}
+
+/**
+ * Node CoolProp
+ */
+NodePropsSI::NodePropsSI(std::string alias, int number, Node** var){
+  // Copied from NodeFun
+  n = number;
+  op = n == 1 ? funsOne[alias] : funsMore[alias];
+  inputs = new Node*[n];
+  for (int i=0; i<n; ++i){
+    inputs[i] = var[i];
+  }
+
+  // To reduce computational time required for checks
+  std::string v1 = inputs[1]->toString();
+  std::string v2 = inputs[3]->toString();
+  std::string fluid = inputs[5]->toString();
+  if (v1 == "Q" || v2 == "Q"){
+    TMAX = CoolProp::PropsSI("TCRIT","",0,"",0,fluid);
+    PMAX = CoolProp::PropsSI("PCRIT","",0,"",0,fluid);
+  } else {
+    TMAX = CoolProp::PropsSI("TMAX","",0,"",0,fluid);
+    PMAX = CoolProp::PropsSI("PMAX","",0,"",0,fluid);
+  }
+  TMIN = CoolProp::PropsSI("TMIN","",0,"",0,fluid);
+  PMIN = CoolProp::PropsSI("PMIN","",0,"",0,fluid);
+}
+
+NodePropsSI::NodePropsSI(Node** in, double Tmax, double Pmax, double Tmin, double Pmin){
+  // Copied from NodeFun
+  n = 6;
+  op = 0;
+  inputs = new Node*[n];
+  for (int i=0; i<n; ++i){
+    inputs[i] = in[i];
+  }
+
+  // To avoid recalculations
+  TMAX = Tmax;
+  PMAX = Pmax;
+  TMIN = Tmin;
+  PMIN = Pmin;
+}
+
+double NodePropsSI::eval(Scope &local){
+  // Get data
+  std::string p = inputs[0]->toString();
+  std::string v1 = inputs[1]->toString();
+  double n1 = inputs[2] -> eval(local);
+  std::string v2 = inputs[3]->toString();
+  double n2 = inputs[4] -> eval(local);
+  std::string fluid = inputs[5]->toString();
+
+  // Valid values
+  if (!std::isfinite(n1) || !std::isfinite(n2)){
+    return NAN;
+  }
+  
+  //CoolProp::set_config_bool(DONT_CHECK_PROPERTY_LIMITS,true);
+  // Check temperature and pressure limits
+  // Temperature and pressure limits
+  if (v1 == "T"){
+    if (n1 >= TMAX || n1 <= TMIN){
+      return NAN;
+    } else if (v2 == "P"){
+      if (n2 >= PMAX || n2 <= PMIN){
+	return NAN;
+      }
+    }
+  } else if (v2 == "T"){
+    if (n2 >= TMAX || n2 <= TMIN){
+      return NAN;
+    } else if (v1 == "P"){
+      if (n1 >= PMAX || n1 <= PMIN){
+	return NAN;
+      }
+    }
+  }
+
+  double ans = CoolProp::PropsSI(p,v1,n1,v2,n2,fluid);
+
+  if (std::isinf(ans)){
+    return NAN;
+  } else {
+    return ans;
+  }
+}
+
+/**
+ * NodeFun copy
+ */
+NodePropsSI* NodePropsSI::get_copy(){
+  Node** copy_inputs = new Node*[n];
+  for (int i=0;i<n;++i){
+    copy_inputs[i] = inputs[i]->get_copy();
+  }
+  std::string alias = n == 1 ? namesOne[op] : namesMore[op];
+  return new NodePropsSI(copy_inputs, TMAX, PMAX, TMIN, PMIN);
 }

@@ -132,7 +132,14 @@ void addFunction(std::stack<std::string> &funStack,
     inputStack.pop();
   }
   Node* fun;
-  fun = new NodeFun(funStack.top(),n,inputs);
+
+  // Verify if it is a CoolProp function
+  std::string fName = funStack.top();
+  if (n > 1 && fName == "PropsSI" ){
+    fun = new NodePropsSI(funStack.top(),n,inputs);
+  } else{
+    fun = new NodeFun(funStack.top(),n,inputs);
+  }
   
   funStack.pop();
   tkStack.push(fun);

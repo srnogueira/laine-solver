@@ -165,7 +165,7 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
     
     // Solve block
     int count = 0;
-    const int max_count = 5;
+    const int max_count = 20;
     bool converged;
     while (count < max_count){
       // Try first Brent and after Newton

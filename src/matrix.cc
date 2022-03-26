@@ -88,8 +88,17 @@ mat mat::operator-= (mat& other){
 mat& mat::operator=(mat other){
   rows = std::move(other.rows);
   columns = std::move(other.columns);
-  delete[] eArray; // avoid memory leaks
-  eArray = std::exchange(other.eArray,nullptr);
+
+  double foo;
+  for (int i=0; i<rows; ++i){
+    for (int j=0; j<columns; j++){
+      foo=other.get(i,j);
+      this->set(i,j,foo);
+    }
+  }
+  
+  //delete[] eArray; // avoid memory leaks
+  //eArray = std::exchange(other.eArray,nullptr);
   return *this;
 }
 

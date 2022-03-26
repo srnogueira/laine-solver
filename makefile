@@ -2,11 +2,12 @@
 VPATH = src
 
 # Coolprop static library
-CPlib = -ldl -L./lib/coolprop/static -I./lib/coolprop/include -I./lib/coolprop/externals/fmtlib/ -I./lib/coolprop/ -lCoolProp
+CPIn = -I./lib/coolprop/include -I./lib/coolprop/externals/fmtlib/ -I./lib/coolprop/
+CPlib = $(CPIn) -ldl -L./lib/coolprop/static -lCoolProp
 
 # Compiler
 #CC = g++ -Wall -O3
-CC = emcc -O3
+CC = emcc -O2 --profiling
 
 laine : laine.o text.o node.o polish.o matrix.o solver.o reduce.o
 	$(CC) $^ -o $@ $(CPlib)
@@ -34,9 +35,9 @@ laine.o : laine.cc
 	$(CC) -c $< -o $@ $(CPlib)
 
 demo : wasm.cc text.o node.o polish.o matrix.o solver.o reduce.o
-	$(CC) --bind ./src/wasm.cc text.o node.o polish.o matrix.o solver.o reduce.o -I./include -o ./laine.js $(CPlib) -s LLD_REPORT_UNDEFINED -s EXPORTED_FUNCTIONS='["_setThrew"]'  -s DISABLE_EXCEPTION_CATCHING=0 #-fexceptions -s INITIAL_MEMORY=33554432
+	$(CC) --bind ./src/wasm.cc text.o node.o polish.o matrix.o solver.o reduce.o -I./include -o ./laine.js $(CPlib) -s LLD_REPORT_UNDEFINED -s EXPORTED_FUNCTIONS='["_setThrew"]'  -s DISABLE_EXCEPTION_CATCHING=0 
 
 # Utilities
 .PHONY: clean
 clean :
-	rm laine *.o
+	rm *.o

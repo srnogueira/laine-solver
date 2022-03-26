@@ -100,6 +100,21 @@ public:
 };
 
 /**
+ * CoolProp class
+ */
+
+class NodePropsSI : public NodeFun{
+protected:
+  double TMAX,PMAX,TMIN,PMIN;
+public:
+  NodePropsSI(std::string alias, int number, Node** var);
+  NodePropsSI(Node** in, double Tmax, double Pmax, double Tmin, double Pmin);
+  virtual double eval(Scope &local);
+  virtual NodePropsSI* get_copy();
+};
+
+
+/**
  * Operation Node: + - * / ^
  */
 class NodeOp : public NodeFun {
@@ -110,5 +125,5 @@ public:
   virtual std::string toString();
   virtual NodeOp* get_copy();
 };
- 
+
 #endif // _NODE_

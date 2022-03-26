@@ -7,6 +7,7 @@ int main(){
   srand(time(NULL)); // seed for random numbers
   
   while (true){
+      
     /**
      * Get file
      **/
