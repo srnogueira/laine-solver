@@ -449,7 +449,6 @@ bool solve(std::vector<Node*> &forest, Scope &guessScope){
   double error_line = 1;
   double error_dx = 1;
   double error_rel = 1;
-  double error_change = 1;
 
   // Counters
   const int max = 200;
@@ -469,7 +468,6 @@ bool solve(std::vector<Node*> &forest, Scope &guessScope){
     error = 1;
     error_dx = 1;
     error_rel = 1;
-    error_change = 1;
     useBroyden = false; // flag to use Broyden method
     computed = false;   // flag to indicate if its the calculated Jacobian
     nostep = false;
@@ -532,7 +530,6 @@ bool solve(std::vector<Node*> &forest, Scope &guessScope){
 	error_line = evalError(answers);
 	++count_line;
 	// Reduce the step if necessary
-	error_change = abs(1-error_line/error);
 	if(error_line > error || !isfinite(error_line)){
 	  if (computed){
 	    guess -= deltaX*(1/pow(2,count_line));
@@ -565,7 +562,7 @@ bool solve(std::vector<Node*> &forest, Scope &guessScope){
       error_dx = count !=0 ? evalError(deltaX,guess) : 1;
 
       // Check error change <- break earlier
-      if (!isfinite(error) || error_change < 1e-3){
+      if (!isfinite(error)){
 	count = max;
 	break;
       }    

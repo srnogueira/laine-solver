@@ -22,7 +22,7 @@ std::string solveText(std::string text){
    * Solve
    **/
   Scope solutions;
-  solveProblem(linesClear,solutions);
+  solveProblem(lines,solutions);
   
   // give solution
   std::string res="{";
