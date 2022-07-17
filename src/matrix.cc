@@ -102,36 +102,36 @@ mat& mat::operator=(mat other){
   return *this;
 }
 
-/**
- * mat operator *
- * for scalar multiplication
- */
-mat& mat::operator*(double scalar){
-  double foo;
-  for (int i=0; i<rows; ++i){
-    for (int j=0; j<columns; j++){
-      foo=this->get(i,j);
-      this->set(i,j,foo*scalar);
-    }
-  }
-  return *this;
-}
+// /**
+//  * mat operator *
+//  * for scalar multiplication
+//  */
+// mat& mat::operator*(double scalar){
+//   double foo;
+//   for (int i=0; i<rows; ++i){
+//     for (int j=0; j<columns; j++){
+//       foo=this->get(i,j);
+//       this->set(i,j,foo*scalar);
+//     }
+//   }
+//   return *this;
+// }
 
 
-/**
- * mat operator /
- * for scalar division
- */
-mat& mat::operator/(double scalar){
-  double foo;
-  for (int i=0; i<rows; ++i){
-    for (int j=0; j<columns; j++){
-      foo=this->get(i,j);
-      this->set(i,j,foo/scalar);
-    }
-  }
-  return *this;
-}
+// /**
+//  * mat operator /
+//  * for scalar division
+//  */
+// mat& mat::operator/(double scalar){
+//   double foo;
+//   for (int i=0; i<rows; ++i){
+//     for (int j=0; j<columns; j++){
+//       foo=this->get(i,j);
+//       this->set(i,j,foo/scalar);
+//     }
+//   }
+//   return *this;
+// }
 
 /**
  * mat operator *
