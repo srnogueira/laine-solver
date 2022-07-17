@@ -21,8 +21,8 @@ struct mat{
   double get(int r, int c) const {return eArray[c+r*columns];}
   void set(int r, int c, double v){eArray[c+r*columns]=v;}
   // Overloaded operators
-  mat& operator* (double scalar);
-  mat& operator/ (double scalar);
+  // mat& operator* (double scalar);
+  // mat& operator/ (double scalar);
   mat operator* (mat other);
   mat operator- (mat other);
   mat operator+= (mat& other);
