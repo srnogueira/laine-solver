@@ -4,7 +4,7 @@ VPATH = src
 # Coolprop static library
 CPIn = -I./lib/coolprop/include -I./lib/coolprop/externals/fmtlib/ -I./lib/coolprop/
 CPlib = $(CPIn) -ldl -L./lib/coolprop/static -lCoolProp
-EmccFlags = -s LLD_REPORT_UNDEFINED -s EXPORTED_FUNCTIONS='["_setThrew"]'  -s DISABLE_EXCEPTION_CATCHING=0
+EmccFlags = -s DISABLE_EXCEPTION_CATCHING=1 -s ERROR_ON_UNDEFINED_SYMBOLS=0 #-s EXPORTED_FUNCTIONS='["_setThrew"]'   
 
 # Compiler
 #CC = g++ -Wall -O3
@@ -15,19 +15,19 @@ text.o : text.cc text.hpp
 	$(CC) -c $< -o $@ 
 
 node.o : node.cc node.hpp
-	$(CC) -c $< -o $@ $(CPIn) -fexceptions
+	$(CC) -c $< -o $@ $(CPIn) #-fexceptions
 
 polish.o : polish.cc polish.hpp 
-	$(CC) -c $< -o $@ $(CPIn) -fexceptions
+	$(CC) -c $< -o $@ $(CPIn) #-fexceptions
 
 matrix.o : matrix.cc matrix.hpp 
 	$(CC) -c $< -o $@ 
 
 solver.o : solver.cc solver.hpp 
-	$(CC) -c $< -o $@ $(CPIn) -fexceptions
+	$(CC) -c $< -o $@ $(CPIn) #-fexceptions
 
 reduce.o : reduce.cc reduce.hpp 
-	$(CC) -c $< -o $@ $(CPIn) -fexceptions
+	$(CC) -c $< -o $@ $(CPIn) #-fexceptions
 
 laine.o : laine.cc 
 	$(CC) -c $< -o $@ $(CPIn)
