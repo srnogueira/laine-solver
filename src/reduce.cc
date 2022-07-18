@@ -164,25 +164,22 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
     }
     
     // Solve block
-    int count = 0;
-    const int max_count = 20;
+    const unsigned max_count = 20;
     bool converged;
-    while (count < max_count){
+    for (unsigned i=0; i < max_count; ++i){
       // Try first Brent and after Newton
-      if (block.size() == 1 && count == 0){
+      if (block.size() == 1 && i == 0){
 	converged = solve(block[0],solutions);
       } else{
-	converged = solve(block,solutions);
+	converged = solve(block,solutions,i);
       }	
       if (converged){
 	break;
       } else{
-	++count;
 	// Clear guesses
 	for (const auto &name:varBlocks){
 	  solutions.erase(name);
 	}
-	continue;
       }
       // catch (std::exception &e){
       // 	++count;
@@ -194,7 +191,7 @@ void solveByBlocks(std::vector<Node*> &equations, Scope &solutions){
       // }
     }
     
-    if (count == max_count){
+    if (!converged){
       throw std::invalid_argument("not converged @solveByBlocks");
     }
 

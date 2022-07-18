@@ -43,6 +43,6 @@ std::vector<Guess> findGuessPair(Variables &vars, std::vector<Node*> &forest, Sc
 
 mat brent(std::string var, Node* tree, Scope &guessScope);
 bool solve(Node* tree, Scope &guessScope);
-bool solve(std::vector<Node*> &forest, Scope &guessScope);
+bool solve(std::vector<Node*> &forest, Scope &guessScope, unsigned i);
 
 #endif //_SOLVER_
